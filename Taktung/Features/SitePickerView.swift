@@ -25,7 +25,7 @@ struct SitePickerView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .background(Palette.background)
+        .taktCanvas()
         .searchable(text: $query, prompt: "Filter sites")
         .navigationTitle("Sites")
         .navigationBarTitleDisplayMode(.inline)

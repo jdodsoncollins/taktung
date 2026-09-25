@@ -74,3 +74,12 @@ struct MonoFont {
         .custom("Menlo", size: size).weight(weight)
     }
 }
+
+extension View {
+    /// Navigation content otherwise sizes to its text and leaves the window black on the sides.
+    func taktCanvas() -> some View {
+        frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Palette.background.ignoresSafeArea())
+            .containerBackground(Palette.background, for: .navigation)
+    }
+}

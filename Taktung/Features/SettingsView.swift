@@ -125,9 +125,10 @@ struct SettingsView: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Spacing.lg)
         }
-        .background(Palette.background.ignoresSafeArea())
+        .taktCanvas()
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

@@ -73,9 +73,10 @@ struct DeploymentDetailView: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Spacing.lg)
         }
-        .background(Palette.background.ignoresSafeArea())
+        .taktCanvas()
         .navigationTitle("Deployment")
         .navigationBarTitleDisplayMode(.inline)
         .task {

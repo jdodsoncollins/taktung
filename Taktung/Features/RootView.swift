@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RootView: View {
     @Environment(AppSession.self) private var session
@@ -21,6 +22,9 @@ struct RootView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Palette.background.ignoresSafeArea())
+        .background(WindowCanvas())
         .accessibilityIdentifier(AccessibilityIDs.root)
         .sheet(isPresented: $session.settingsOpen) {
             NavigationStack { SettingsView() }
@@ -50,6 +54,31 @@ struct RootView: View {
             Text(session.pendingMutation?.message ?? "This action requires confirmation.")
         }
         .background(Palette.background.ignoresSafeArea())
+    }
+}
+
+/// Paints the UIKit window. SwiftUI backgrounds stop at the scroll content, so the sides stay black.
+private struct WindowCanvas: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = CanvasView()
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        (uiView as? CanvasView)?.paint()
+    }
+
+    private final class CanvasView: UIView {
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            paint()
+        }
+
+        func paint() {
+            window?.backgroundColor = UIColor(red: 12 / 255, green: 9 / 255, blue: 8 / 255, alpha: 1)
+        }
     }
 }
 

@@ -38,9 +38,10 @@ struct SearchView: View {
                         .foregroundStyle(Palette.textTertiary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Spacing.lg)
         }
-        .background(Palette.background.ignoresSafeArea())
+        .taktCanvas()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ChromeToolbar(showRefresh: false) }
         .accessibilityIdentifier(AccessibilityIDs.tabSearch)

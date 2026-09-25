@@ -9,11 +9,12 @@ struct HomeView: View {
                 banners
                 bodyContent
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Spacing.lg)
             .padding(.top, Spacing.sm)
             .padding(.bottom, 48)
         }
-        .background(Palette.background.ignoresSafeArea())
+        .taktCanvas()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ChromeToolbar() }
         .refreshable { await session.refreshProjects() }

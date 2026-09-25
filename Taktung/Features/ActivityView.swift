@@ -56,11 +56,12 @@ struct ActivityView: View {
                     .overlay(alignment: .bottom) { Palette.separator.frame(height: 0.5) }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Spacing.lg)
             .padding(.top, Spacing.sm)
             .padding(.bottom, 48)
         }
-        .background(Palette.background.ignoresSafeArea())
+        .taktCanvas()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ChromeToolbar(showRefresh: false) }
         .accessibilityIdentifier(AccessibilityIDs.tabActivity)
