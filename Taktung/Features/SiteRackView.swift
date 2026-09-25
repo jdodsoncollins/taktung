@@ -14,12 +14,15 @@ struct SiteRackView: View {
 
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Plate {
-                DeploymentPreviewThumb(
-                    url: prod?.url,
-                    state: prod?.state ?? .unknown,
-                    variant: .banner
-                )
-                .frame(maxWidth: .infinity)
+                HStack {
+                    Spacer(minLength: 0)
+                    DeploymentPreviewThumb(
+                        url: prod?.url,
+                        state: prod?.state ?? .unknown,
+                        variant: .banner
+                    )
+                    Spacer(minLength: 0)
+                }
                 .padding(.vertical, Spacing.sm)
             }
 

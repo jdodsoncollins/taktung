@@ -16,6 +16,14 @@ struct DeploymentPreviewTests {
         #expect(!isUnusablePreviewLocation("https://www.jeremycollins.net"))
     }
 
+    @Test @MainActor func captureWebViewStaysOffscreen() {
+        let parked = PreviewCaptureCenter.offscreenFrame(height: 1600)
+        #expect(parked.minX < 0)
+        #expect(parked.maxX <= 0)
+        #expect(parked.width == PreviewCaptureCenter.captureWidth)
+        #expect(parked.height == 1600)
+    }
+
     @Test func absoluteURLAddsScheme() {
         #expect(absoluteDeploymentURL("example.vercel.app") == "https://example.vercel.app")
         #expect(absoluteDeploymentURL("https://example.vercel.app") == "https://example.vercel.app")

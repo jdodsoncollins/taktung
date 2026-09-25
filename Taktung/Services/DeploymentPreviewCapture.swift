@@ -24,10 +24,25 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
     }
 
     func attach(_ webView: WKWebView) {
-        self.webView = webView
-        webView.navigationDelegate = self
-        webView.frame = CGRect(x: 0, y: 0, width: Self.captureWidth, height: Self.minHeight)
+        if self.webView !== webView {
+            self.webView?.navigationDelegate = nil
+            self.webView = webView
+            webView.navigationDelegate = self
+            webView.isOpaque = true
+            webView.isUserInteractionEnabled = false
+        }
+        park(webView, height: Self.minHeight)
         pump()
+    }
+
+    /// Keep the capture view off-screen. `attach` used to park it at (0, 0) on the
+    /// window, so the live deployment painted over Home / Activity.
+    func park(_ webView: WKWebView, height: CGFloat) {
+        webView.frame = Self.offscreenFrame(height: height)
+    }
+
+    static func offscreenFrame(height: CGFloat) -> CGRect {
+        CGRect(x: -4000, y: 0, width: captureWidth, height: height)
     }
 
     func image(for pageURL: String, prioritize: Bool = false) async -> UIImage? {
@@ -47,7 +62,9 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
         queue.removeFirst()
         current = next
         misses.remove(next)
-        webView?.frame.size = CGSize(width: Self.captureWidth, height: Self.minHeight)
+        if let webView {
+            park(webView, height: Self.minHeight)
+        }
         guard let url = URL(string: next) else {
             finish(nil)
             return
@@ -55,9 +72,10 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
         webView?.load(URLRequest(url: url))
         timeoutTask?.cancel()
         timeoutTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(8))
+            guard let self else { return }
+            try? await Task.sleep(for: .seconds(self.timeout))
             guard !Task.isCancelled else { return }
-            self?.finish(nil)
+            self.finish(nil)
         }
     }
 
@@ -115,12 +133,14 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
         let rawH = CGFloat((object?["h"] as? Double) ?? Double(Self.minHeight))
         let scaled = rawH * (Self.captureWidth / max(pageW, 1))
         let height = min(Self.maxHeight, max(Self.minHeight, scaled))
-        webView.frame.size = CGSize(width: Self.captureWidth, height: height)
+        park(webView, height: height)
+        let page = current
         let config = WKSnapshotConfiguration()
         config.rect = CGRect(x: 0, y: 0, width: Self.captureWidth, height: height)
         webView.takeSnapshot(with: config) { [weak self] image, _ in
             Task { @MainActor in
-                self?.finish(image)
+                guard let self, self.current == page else { return }
+                self.finish(image)
             }
         }
     }
@@ -137,22 +157,32 @@ struct PreviewCaptureHost: UIViewRepresentable {
 }
 
 final class OffscreenWebHost: UIView {
-    private let web = WKWebView(
-        frame: CGRect(x: -4000, y: 0, width: PreviewCaptureCenter.captureWidth, height: PreviewCaptureCenter.minHeight)
-    )
+    private let web = WKWebView(frame: PreviewCaptureCenter.offscreenFrame(height: PreviewCaptureCenter.minHeight))
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        isUserInteractionEnabled = false
+        isAccessibilityElement = false
+        accessibilityElementsHidden = true
+        clipsToBounds = true
         web.isUserInteractionEnabled = false
+        web.isOpaque = true
+        web.accessibilityElementsHidden = true
     }
 
     required init?(coder: NSCoder) { nil }
 
+    override var intrinsicContentSize: CGSize { .zero }
+
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        guard let window else { return }
+        guard let window else {
+            web.removeFromSuperview()
+            return
+        }
         if web.superview !== window {
-            window.addSubview(web)
+            web.frame = PreviewCaptureCenter.offscreenFrame(height: PreviewCaptureCenter.minHeight)
+            window.insertSubview(web, at: 0)
         }
         PreviewCaptureCenter.shared.attach(web)
     }

@@ -29,13 +29,12 @@ xcrun simctl install "$UDID" "$APP"
 xcrun simctl terminate "$UDID" com.jcollins.takt 2>/dev/null || true
 
 ARGS=()
-if [[ "${TAKT_DEMO_MODE:-1}" == "1" ]]; then
+if [[ "${TAKT_DEMO_MODE:-1}" == "1" && -z "${TAKT_UI_TOKEN:-}" ]]; then
   ARGS+=(-TAKT_DEMO_MODE)
 fi
 if [[ -n "${TAKT_UI_TOKEN:-}" ]]; then
-  xcrun simctl launch --terminate-running-process "$UDID" com.jcollins.takt "${ARGS[@]}"
-else
-  xcrun simctl launch --terminate-running-process "$UDID" com.jcollins.takt "${ARGS[@]}"
+  export SIMCTL_CHILD_TAKT_UI_TOKEN="$TAKT_UI_TOKEN"
 fi
+xcrun simctl launch --terminate-running-process "$UDID" com.jcollins.takt "${ARGS[@]}"
 
 echo "Launched com.jcollins.takt on $UDID"
