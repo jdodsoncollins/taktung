@@ -1,0 +1,26 @@
+import Foundation
+
+enum AccessibilityIDs {
+    static let root = "takt.root"
+    static let tabHome = "takt.tab.home"
+    static let tabDeployments = "takt.tab.deployments"
+    static let tabActivity = "takt.tab.activity"
+    static let tabSearch = "takt.tab.search"
+    static let tabSettings = "takt.tab.settings"
+    static let connectButton = "takt.connect"
+    static let tokenInput = "takt.token.input"
+    static let projectList = "takt.projects"
+    static let siteTitle = "takt.site.title"
+    static let diagnose = "takt.home.diagnose"
+    static let sitePicker = "takt.site.picker"
+    static let inspectHosts = "takt.inspect.hosts"
+    static let inspectFunctions = "takt.inspect.functions"
+    static let detailPaneDiagnose = "takt.detail.pane.diagnose"
+    static let detailPaneCompare = "takt.detail.pane.compare"
+    static let detailPaneLogs = "takt.detail.pane.logs"
+    static let detailPaneErrors = "takt.detail.pane.errors"
+    static let deploymentList = "takt.deployments"
+    static let redeployButton = "takt.redeploy"
+    static let commandOpen = "takt.command.open"
+    static let demoToggle = "takt.demo.toggle"
+}
