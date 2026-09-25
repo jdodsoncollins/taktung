@@ -1,0 +1,6 @@
+{
+  "name": "taktung",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Native SwiftUI Taktung — EAS delivery wrapper only, no JS runtime."
+}

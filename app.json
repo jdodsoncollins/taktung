@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Taktung",
+    "slug": "takt",
+    "ios": {
+      "bundleIdentifier": "com.jcollins.takt"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "759c329b-3963-4d2b-80af-3792e9020b8d"
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+platform :ios, '27.0'
+
+target 'Taktung' do
+end

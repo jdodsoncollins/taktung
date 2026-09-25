@@ -115,6 +115,15 @@ Do not commit tokens.
 xcodebuild -scheme Taktung -destination 'platform=iOS Simulator,name=iPhone 17,OS=27.0' test
 ```
 
+### TestFlight
+
+Store builds reuse the existing Takt EAS project and App Store app. The marketing version must be higher than the live App Store version.
+
+```bash
+npx eas-cli build -p ios -e testflight --local --output .asc/artifacts/Taktung.ipa --non-interactive
+npx eas-cli submit -p ios -e testflight --path .asc/artifacts/Taktung.ipa --non-interactive --wait
+```
+
 ---
 
 ## Sister apps
