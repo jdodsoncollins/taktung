@@ -1,0 +1,28 @@
+appId: com.jcollins.takt
+---
+- launchApp:
+    appId: com.jcollins.takt
+    stopApp: false
+    arguments:
+      TAKT_DEMO_MODE: true
+- assertVisible:
+    id: "takt.root"
+- assertVisible: "DIAGNOSE"
+- takeScreenshot: demo-home
+- tapOn: "Deploys"
+- assertVisible: "Update landing page layout"
+- takeScreenshot: demo-deploys
+- tapOn: "Activity"
+- assertVisible: "Loaded projects"
+- takeScreenshot: demo-activity
+- tapOn: "Search"
+- assertVisible: "Look up"
+- takeScreenshot: demo-search
+- tapOn:
+    id: "takt.tab.settings"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 5000
+- assertVisible: "Screenshot demo"
+- takeScreenshot: demo-settings
+- tapOn: "Done"
