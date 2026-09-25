@@ -47,13 +47,9 @@ final class AppSession {
         projects.first { $0.id == selectedProjectId }
     }
 
-    var showsSearch: Bool {
-        DemoMode.isEnabled || onDeviceAvailable
-    }
+    var showsSearch: Bool { onDeviceAvailable }
 
-    var canDiagnose: Bool {
-        DemoMode.isEnabled || onDeviceAvailable
-    }
+    var canDiagnose: Bool { onDeviceAvailable }
 
     private let keychain = KeychainStore()
     private var client: (any VercelAPIClient)?
@@ -525,7 +521,6 @@ final class AppSession {
         deployments = buildDemoDeployments(projectId: DemoIDs.portfolio)
         recentActivity = buildDemoActivity()
         tokenSource = .pat
-        onDeviceAvailable = true
     }
 
     private func connectWithStoredToken(_ token: String) async -> ConnectionAttemptResult {

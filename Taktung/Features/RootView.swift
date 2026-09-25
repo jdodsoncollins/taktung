@@ -3,24 +3,30 @@ import UIKit
 
 struct RootView: View {
     @Environment(AppSession.self) private var session
+    @State private var section: TaktSection = .home
 
     var body: some View {
         @Bindable var session = session
-        TabView {
-            Tab("Home", systemImage: "house.fill") {
+        TabView(selection: $section) {
+            Tab("Home", systemImage: "house.fill", value: TaktSection.home) {
                 NavigationStack { HomeView() }
             }
-            Tab("Deploys", systemImage: "arrow.up.right") {
+            Tab("Deploys", systemImage: "arrow.up.right", value: TaktSection.deploys) {
                 NavigationStack { DeploymentsView() }
             }
-            Tab("Activity", systemImage: "clock") {
+            Tab("Activity", systemImage: "clock", value: TaktSection.activity) {
                 NavigationStack { ActivityView() }
             }
             if session.showsSearch {
-                Tab("Search", systemImage: "sparkle") {
+                Tab("Search", systemImage: "sparkle", value: TaktSection.search) {
                     NavigationStack { SearchView() }
                 }
             }
+        }
+        .tabViewStyle(.sidebarAdaptable)
+        .onReceive(NotificationCenter.default.publisher(for: .taktungOpenSection)) { note in
+            guard let raw = note.object as? String, let next = TaktSection(rawValue: raw) else { return }
+            section = next == .search && !session.showsSearch ? .home : next
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.background.ignoresSafeArea())

@@ -77,8 +77,19 @@ struct MonoFont {
 
 extension View {
     /// Navigation content otherwise sizes to its text and leaves the window black on the sides.
+    /// Regular width (iPad, Split View, landscape Pro Max, inner fold) keeps a readable column.
     func taktCanvas() -> some View {
-        frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        modifier(TaktCanvasModifier())
+    }
+}
+
+private struct TaktCanvasModifier: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var width
+
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: width == .regular ? 760 : .infinity, alignment: .top)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Palette.background.ignoresSafeArea())
             .containerBackground(Palette.background, for: .navigation)
     }
