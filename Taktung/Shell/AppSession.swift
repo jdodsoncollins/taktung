@@ -475,7 +475,17 @@ final class AppSession {
 
     func routeSearch(_ query: String) -> String {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if q.isEmpty { return "Type a site name, READY, failed, or env." }
+        if q.isEmpty { return "Choose an example, or type a site name." }
+        if q == "ready" || q.contains(" ready") {
+            let ready = deployments.filter { $0.state == .ready }
+            if let site = selectedProject {
+                let state = site.productionDeployment?.state.rawValue ?? "NO PROD"
+                return "\(siteTitle(site)) production is \(state). \(ready.count) READY deploy(s) loaded."
+            }
+            return ready.isEmpty
+                ? "No READY deployments in the loaded list."
+                : "\(ready.count) READY deploy(s) across loaded sites."
+        }
         if q.contains("env") {
             return envDrift?.summary ?? "Run Env drift from a selected site. Names only — never values."
         }

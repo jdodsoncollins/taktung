@@ -30,12 +30,10 @@ struct SearchView: View {
                             .foregroundStyle(Palette.text)
                             .textSelection(.enabled)
                     }
-                }
-
-                if session.canDiagnose {
-                    Text("On-device when Apple Intelligence is available; otherwise a local heuristic over loaded signals. Env values never enter this brief.")
-                        .font(.footnote)
-                        .foregroundStyle(Palette.textTertiary)
+                } else if session.connection.isConnected {
+                    promptChips
+                } else {
+                    connectInstructions
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -47,7 +45,74 @@ struct SearchView: View {
         .accessibilityIdentifier(AccessibilityIDs.tabSearch)
     }
 
+    private var promptChips: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            SectionLabel(text: "Try")
+            FlowChips(titles: SearchPrompts.examples(site: session.selectedProject.map(siteTitle))) { title in
+                query = title
+                result = session.routeSearch(title)
+            }
+            Text("On-device when Apple Intelligence is available; otherwise a local lookup over loaded signals. Env values never enter this brief.")
+                .font(.footnote)
+                .foregroundStyle(Palette.textTertiary)
+        }
+    }
+
+    private var connectInstructions: some View {
+        Plate {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                SectionLabel(text: "Connect first")
+                Text("Paste a Vercel personal access token in Settings. Search then looks up the loaded sites, READY, failed deploys, and env names. Values are never shown.")
+                    .font(.body)
+                    .foregroundStyle(Palette.textSecondary)
+                PrimaryButton(title: "Open Settings") {
+                    session.settingsOpen = true
+                }
+            }
+        }
+    }
+
     private func run() {
-        result = session.routeSearch(query)
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            result = nil
+            return
+        }
+        result = session.routeSearch(trimmed)
+    }
+}
+
+enum SearchPrompts {
+    static func examples(site: String?) -> [String] {
+        var prompts = ["READY", "failed", "env"]
+        if let site, !site.isEmpty {
+            prompts.insert(site, at: 0)
+        }
+        return prompts
+    }
+}
+
+private struct FlowChips: View {
+    var titles: [String]
+    var onSelect: (String) -> Void
+
+    var body: some View {
+        FlexibleChipRow(titles: titles, onSelect: onSelect)
+    }
+}
+
+private struct FlexibleChipRow: View {
+    var titles: [String]
+    var onSelect: (String) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.sm) {
+                ForEach(titles, id: \.self) { title in
+                    FilterChip(label: title, selected: false) { onSelect(title) }
+                        .lineLimit(1)
+                }
+            }
+        }
     }
 }
