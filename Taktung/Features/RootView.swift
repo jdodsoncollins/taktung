@@ -25,6 +25,7 @@ struct RootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.background.ignoresSafeArea())
         .background(WindowCanvas())
+        .background(PreviewCaptureHost())
         .accessibilityIdentifier(AccessibilityIDs.root)
         .sheet(isPresented: $session.settingsOpen) {
             NavigationStack { SettingsView() }

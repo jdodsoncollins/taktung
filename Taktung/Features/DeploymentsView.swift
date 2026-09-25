@@ -62,13 +62,7 @@ struct DeploymentRowView: View {
         HStack(alignment: .center, spacing: Spacing.md) {
             StateWord(label: deployment.state.rawValue, tone: deploymentStateTone(deployment.state))
                 .frame(width: 72, alignment: .leading)
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(Palette.surfaceMuted)
-                .frame(width: 28, height: 36)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .strokeBorder(Palette.border, lineWidth: 0.5)
-                )
+            DeploymentPreviewThumb(url: deployment.url, state: deployment.state, variant: .chip)
             VStack(alignment: .leading, spacing: 4) {
                 Text(deploymentTitle(deployment))
                     .font(.body.weight(.medium))

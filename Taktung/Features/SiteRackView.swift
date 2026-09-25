@@ -14,17 +14,13 @@ struct SiteRackView: View {
 
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Plate {
-                RoundedRectangle(cornerRadius: Radii.plate, style: .continuous)
-                    .fill(Palette.surfaceMuted)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 168)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .strokeBorder(Palette.border.opacity(0.5), lineWidth: 0.5)
-                            .padding(.horizontal, 72)
-                            .padding(.vertical, 12)
-                    }
-                    .accessibilityHidden(true)
+                DeploymentPreviewThumb(
+                    url: prod?.url,
+                    state: prod?.state ?? .unknown,
+                    variant: .banner
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.sm)
             }
 
             Plate {

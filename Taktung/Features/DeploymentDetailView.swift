@@ -42,6 +42,14 @@ struct DeploymentDetailView: View {
                                 .font(MonoFont.body(12))
                                 .foregroundStyle(Palette.textTertiary)
                         }
+                        DeploymentPreviewThumb(url: deployment.url, state: deployment.state, variant: .detail)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, Spacing.sm)
+                        if let page = absoluteDeploymentURL(deployment.url), let destination = URL(string: page) {
+                            Link("Open deployment", destination: destination)
+                                .font(MonoFont.body(13, weight: .semibold))
+                                .foregroundStyle(Palette.accent)
+                        }
                     }
                 }
                 HStack(spacing: Spacing.sm) {
