@@ -1,0 +1,406 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		F1A8B2C3D4E5F60718293A4B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 76B103DE9E62424AA84073FE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 93E01CDD1E5F42CE99C98B36;
+			remoteInfo = Taktung;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2E8F1A9C4B6D4E0A9C11D3F0 /* Exceptions for "Taktung" folder in "Taktung" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 93E01CDD1E5F42CE99C98B36 /* Taktung */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		334DEB1AD6E04BB2B818CB27 /* Taktung */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2E8F1A9C4B6D4E0A9C11D3F0 /* Exceptions for "Taktung" folder in "Taktung" target */,
+			);
+			path = Taktung;
+			sourceTree = "<group>";
+		};
+		60F8230A2E754F96854532AE /* TaktungTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TaktungTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFileReference section */
+		1EB49D1768884559BBB02DD4 /* Taktung.app */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = Taktung.app;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		1E86CD6A3C4B48D1A2FF3E2F /* TaktungTests.xctest */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.cfbundle;
+			includeInIndex = 0;
+			path = TaktungTests.xctest;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4DFB27CC782B4950AA0C845E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A2F6C7323704D068E816BDB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4783D51A73D74E22958BD55C = {
+			isa = PBXGroup;
+			children = (
+				334DEB1AD6E04BB2B818CB27 /* Taktung */,
+				60F8230A2E754F96854532AE /* TaktungTests */,
+				C9717343ADED439D8AA55CB0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C9717343ADED439D8AA55CB0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1EB49D1768884559BBB02DD4 /* Taktung.app */,
+				1E86CD6A3C4B48D1A2FF3E2F /* TaktungTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		93E01CDD1E5F42CE99C98B36 /* Taktung */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BD518CFA3CA346D78F86F3C6 /* Build configuration list for PBXNativeTarget "Taktung" */;
+			buildPhases = (
+				D2D9105A75CF45E395F700CD /* Sources */,
+				4DFB27CC782B4950AA0C845E /* Frameworks */,
+				A1C46DB11A3D40B19E38B009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				334DEB1AD6E04BB2B818CB27 /* Taktung */,
+			);
+			name = Taktung;
+			productName = Taktung;
+			productReference = 1EB49D1768884559BBB02DD4 /* Taktung.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3D74F4B37D4540E7B3D28BFA /* TaktungTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71A8B2C3D4E5F60718293A4B /* Build configuration list for PBXNativeTarget "TaktungTests" */;
+			buildPhases = (
+				F2880A6FCA9249AE8C70EEB1 /* Sources */,
+				6A2F6C7323704D068E816BDB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E1A8B2C3D4E5F60718293A4B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				60F8230A2E754F96854532AE /* TaktungTests */,
+			);
+			name = TaktungTests;
+			productName = TaktungTests;
+			productReference = 1E86CD6A3C4B48D1A2FF3E2F /* TaktungTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		76B103DE9E62424AA84073FE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					93E01CDD1E5F42CE99C98B36 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					3D74F4B37D4540E7B3D28BFA = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 93E01CDD1E5F42CE99C98B36;
+					};
+				};
+			};
+			buildConfigurationList = DFD35C94F9AF48C98FC121D6 /* Build configuration list for PBXProject "Taktung" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4783D51A73D74E22958BD55C;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C9717343ADED439D8AA55CB0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				93E01CDD1E5F42CE99C98B36 /* Taktung */,
+				3D74F4B37D4540E7B3D28BFA /* TaktungTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1C46DB11A3D40B19E38B009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D2D9105A75CF45E395F700CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2880A6FCA9249AE8C70EEB1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E1A8B2C3D4E5F60718293A4B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 93E01CDD1E5F42CE99C98B36 /* Taktung */;
+			targetProxy = F1A8B2C3D4E5F60718293A4B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		81A8B2C3D4E5F60718293A4B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 3WN8R7X4QL;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		91A8B2C3D4E5F60718293A4B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 3WN8R7X4QL;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A1A8B2C3D4E5F60718293A4B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WN8R7X4QL;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Taktung/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Taktung;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jcollins.takt;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B1A8B2C3D4E5F60718293A4B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WN8R7X4QL;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Taktung/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Taktung;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jcollins.takt;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C1A8B2C3D4E5F60718293A4B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WN8R7X4QL;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jcollins.takt.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Taktung.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Taktung";
+			};
+			name = Debug;
+		};
+		D1A8B2C3D4E5F60718293A4B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3WN8R7X4QL;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jcollins.takt.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Taktung.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Taktung";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		DFD35C94F9AF48C98FC121D6 /* Build configuration list for PBXProject "Taktung" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				81A8B2C3D4E5F60718293A4B /* Debug */,
+				91A8B2C3D4E5F60718293A4B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BD518CFA3CA346D78F86F3C6 /* Build configuration list for PBXNativeTarget "Taktung" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1A8B2C3D4E5F60718293A4B /* Debug */,
+				B1A8B2C3D4E5F60718293A4B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		71A8B2C3D4E5F60718293A4B /* Build configuration list for PBXNativeTarget "TaktungTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C1A8B2C3D4E5F60718293A4B /* Debug */,
+				D1A8B2C3D4E5F60718293A4B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 76B103DE9E62424AA84073FE /* Project object */;
+}

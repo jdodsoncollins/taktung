@@ -1,0 +1,26 @@
+.DS_Store
+xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+
+# Local secrets — never commit tokens
+.env
+.env.*
+!.env.example
+Local.xcconfig
+.takt-ui-token
+Secrets.plist
+
+# Tooling
+.grok/
+.idea/
+*.swp
