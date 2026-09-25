@@ -87,29 +87,6 @@ final class AppSession {
         }
     }
 
-    func enableDemo(_ enabled: Bool) async {
-        DemoMode.setUserToggle(enabled)
-        pollTask?.cancel()
-        client = nil
-        generation += 1
-        lastError = nil
-        opsNarrative = nil
-        envDrift = nil
-        incident = nil
-        selectedDeployment = nil
-        if enabled {
-            keychain.eraseAll()
-            await loadDemo()
-        } else {
-            connection = .empty()
-            projects = []
-            selectedProjectId = nil
-            deployments = []
-            recentActivity = []
-            tokenSource = nil
-        }
-    }
-
     func connectWithToken(_ raw: String) async -> ConnectionAttemptResult {
         if DemoMode.isEnabled {
             return .rejected("Demo mode is on. Live Vercel is disabled.")

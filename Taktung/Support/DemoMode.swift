@@ -1,26 +1,19 @@
 import Foundation
 
-/// Screenshot-only fixture path. Off unless launch arg / env / Settings toggle
-/// is set. Live Vercel is never mixed with these fixtures.
+/// Screenshot fixtures. Off unless a launch argument, environment variable,
+/// or Info.plist `TAKT_DEMO_MODE` is set. Never mixed with a live token.
 enum DemoMode {
-    /// Test hook. When set, overrides process/env/defaults.
+    /// Test hook. When set, overrides process, environment, and plist.
     nonisolated(unsafe) static var override: Bool?
-
-    private static let defaultsKey = "TAKT_DEMO_MODE"
 
     static var isEnabled: Bool {
         if let override { return override }
-        let args = ProcessInfo.processInfo.arguments
-        if args.contains("-TAKT_DEMO_MODE") { return true }
-        if let value = ProcessInfo.processInfo.environment["TAKT_DEMO_MODE"] {
-            let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            if ["1", "true", "yes"].contains(normalized) { return true }
-        }
-        return UserDefaults.standard.bool(forKey: defaultsKey)
-    }
-
-    static func setUserToggle(_ enabled: Bool) {
-        UserDefaults.standard.set(enabled, forKey: defaultsKey)
+        if ProcessInfo.processInfo.arguments.contains("-TAKT_DEMO_MODE") { return true }
+        if demoModeEnabled(ProcessInfo.processInfo.environment["TAKT_DEMO_MODE"]) { return true }
+        let bundled = Bundle.main.object(forInfoDictionaryKey: "TAKT_DEMO_MODE")
+        if let flag = bundled as? Bool { return flag }
+        if let flag = bundled as? String { return demoModeEnabled(flag) }
+        return false
     }
 
     static func demoModeEnabled(_ value: String?) -> Bool {

@@ -23,6 +23,6 @@ appId: com.jcollins.takt
 - extendedWaitUntil:
     visible: "Settings"
     timeout: 5000
-- assertVisible: "Screenshot demo"
+- assertVisible: "Personal access token"
 - takeScreenshot: demo-settings
 - tapOn: "Done"

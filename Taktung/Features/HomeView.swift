@@ -109,7 +109,7 @@ struct HomeView: View {
         Plate {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 SectionLabel(text: "Account")
-                Text("Connect a Vercel personal access token in Settings, or turn on screenshot demo.")
+                Text("Connect a Vercel personal access token in Settings.")
                     .font(.body)
                     .foregroundStyle(Palette.textSecondary)
                 PrimaryButton(title: "Open Settings") {

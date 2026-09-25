@@ -92,8 +92,8 @@ xcodebuild -scheme Taktung -destination 'platform=iOS Simulator,name=iPhone 17 P
 
 ### Demo mode (screenshots)
 
-Launch with `TAKT_DEMO_MODE=1` or enable **Screenshot demo** in Settings.
-Fixtures never mix with a live token.
+Off in store builds. Turn it on with the **Taktung Demo** scheme, a launch
+argument, or `TAKT_DEMO_MODE` in Info.plist. Fixtures never mix with a live token.
 
 ```bash
 xcrun simctl launch booted com.jcollins.takt -TAKT_DEMO_MODE

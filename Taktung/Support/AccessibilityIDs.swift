@@ -22,5 +22,4 @@ enum AccessibilityIDs {
     static let deploymentList = "takt.deployments"
     static let redeployButton = "takt.redeploy"
     static let commandOpen = "takt.command.open"
-    static let demoToggle = "takt.demo.toggle"
 }

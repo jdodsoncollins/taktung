@@ -5,7 +5,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var token = ""
     @State private var confirmDisconnect = false
-    @State private var demoEnabled = DemoMode.isEnabled
     @State private var statusMessage: String?
 
     var body: some View {
@@ -82,21 +81,6 @@ struct SettingsView: View {
                                 }
                             }
                         }
-                    }
-                }
-
-                Plate {
-                    VStack(alignment: .leading, spacing: Spacing.md) {
-                        SectionLabel(text: "Screenshot demo")
-                        Text("Loads fixture sites for App Store screenshots. Live Vercel is disabled while this is on.")
-                            .font(.subheadline)
-                            .foregroundStyle(Palette.textSecondary)
-                        Toggle("Screenshot demo", isOn: $demoEnabled)
-                            .tint(Palette.accent)
-                            .accessibilityIdentifier(AccessibilityIDs.demoToggle)
-                            .onChange(of: demoEnabled) { _, enabled in
-                                Task { await session.enableDemo(enabled) }
-                            }
                     }
                 }
 
