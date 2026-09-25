@@ -1,4 +1,8 @@
+# EAS Build's default iOS worker runs `pod install` when `ios/` exists.
+# Taktung has no CocoaPods dependencies. Apple's dependency manager is
+# Swift Package Manager; this file only lets that worker finish.
 platform :ios, '27.0'
+install! 'cocoapods', warn_for_unused_master_specs_repo: false
 
 target 'Taktung' do
 end

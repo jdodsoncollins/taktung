@@ -277,8 +277,15 @@ final class AppSession {
             lastError = "Brief contained secret-like text and was discarded."
             return
         }
-        if OnDevicePlanner.isAvailable {
-            narrative.source = .hybrid
+        if let sentence = await OnDevicePlanner.brief(context: formatOpsNarrative(narrative)) {
+            narrative = OpsNarrative(
+                headline: narrative.headline,
+                body: sentence,
+                nextSteps: narrative.nextSteps,
+                confidence: narrative.confidence,
+                usedFields: narrative.usedFields,
+                source: .appleFoundation
+            )
         }
         opsNarrative = narrative
         appendActivity(
