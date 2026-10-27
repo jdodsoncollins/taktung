@@ -15,6 +15,11 @@ codebase and from MobileflowRN.
 - Liquid Glass on navigation chrome only; content = opaque HIG surfaces.
 - Heuristic Diagnose always works. Hide Search LLM chrome when
   `OnDevicePlanner.isAvailable` is false, except in demo mode (screenshots).
+- Search: rules (`SearchRules`) first; the on-device model only reads words the
+  rules leave unplaced, and `SearchModelPolicy` drops any branch/commit/site not
+  literally in the request. Deployment searches are one read-only
+  `GET /v7/deployments` for the selected site, re-checked on device. Keep
+  results' filters visible and removable. See docs/apple-intelligence.md#search.
 - Prefer unit tests for domain/analysis and API mapping.
 - Identity (bundle ID, team, privacy URL) lives in `AppConfig`.
 - Update `README.md` and `docs/` when revising architecture.

@@ -37,7 +37,7 @@ Version **1.8.1 (47) is Waiting for App Store Review** and available in internal
 | **Tip Jar** | Optional repeatable Apple tips in Settings; no feature unlocks, backend or saved purchase history |
 | **Auth** | Personal access token (Keychain). OAuth PKCE support is planned |
 | **Demo** | Screenshot fixture path. Off unless `TAKT_DEMO_MODE` is set. Never mixed with live Vercel |
-| **Search** | Actionable site and loaded-deployment lookup; visible when Apple Intelligence is available, or in demo for screenshots |
+| **Search** | Plain-language deployment search for the selected site (“successful deploys this week”, “last failed preview on main”) as live, read-only Vercel requests; site lookup and the env check. Apple Intelligence reads phrasing the built-in rules don't recognise. Visible when Apple Intelligence is available, or in demo for screenshots |
 | **UI** | SwiftUI, iOS 27.1 SDK, adaptive split workspaces, Liquid Glass chrome, opaque adaptive neutral content, with persistent System / Light / Dark appearance |
 
 ### Safety rules
@@ -133,6 +133,8 @@ See [Duo readiness](docs/iphone-duo-readiness.md) for the runtime test matrix an
 Settings offers persistent System, Light and Dark appearance. System changes also update an open Settings sheet. Home leads with production state and a direct comparison task; deployment mutations live in a native menu and retain hard confirmation. Settings uses the app icon’s matching light/dark appearance, and Other Apps uses bundled official artwork with full text wrapping.
 
 Apple Intelligence availability refreshes on foreground activation and before a check. The heuristic brief appears immediately. Optional generation rewrites only that snapshot body, capped at 2,048 UTF-8 bytes and measured with the real model tokenizer. Each request uses a fresh session, greedy sampling and a 192-token response ceiling with context headroom. No log transcript, journal, environment values or model actions enter that request. Unavailable models and rejected responses retain the heuristic result. Identical scoped evidence reuses an accepted brief for up to five minutes; duplicate in-flight checks coalesce and site changes cancel obsolete work. See [Apple Intelligence lifecycle](docs/apple-intelligence.md).
+
+Search turns a request into `GET /v7/deployments` filters for the selected site: state, Production/Preview, branch, commit SHA, time window and count. A deterministic vocabulary handles common phrasing instantly and without a model. Only words it cannot place go to the on-device model through guided generation; model values that are not literally in the request (branch, commit text, site) are discarded, and rule-decided filters always win. Each live result is checked again on the device. Results show their filters as removable chips, and the field's clear button or New search returns to suggestions and this launch's recent searches. See [Search](docs/apple-intelligence.md#search).
 
 ### Siri and Shortcuts
 
