@@ -5,6 +5,8 @@ protocol VercelAPIClient: ProjectInspectionAPI, WebAnalyticsAPI {
     func listTeams() async throws -> [VercelTeam]
     func listProjects(teamId: TeamID?) async throws -> [VercelProject]
     func listDeployments(projectId: ProjectID, teamId: TeamID?, limit: Int) async throws -> [VercelDeploymentSummary]
+    /// One site's deployments matching `query`, newest first, at most `query.limit`.
+    func searchDeployments(projectId: ProjectID, teamId: TeamID?, query: DeploymentQuery) async throws -> [VercelDeploymentSummary]
     func getDeployment(id: DeploymentID, teamId: TeamID?) async throws -> VercelDeploymentSummary
     func getBuildLogLines(id: DeploymentID, teamId: TeamID?, limit: Int) async throws -> [BuildLogLine]
     func listEnvVarMeta(projectId: ProjectID, teamId: TeamID?) async throws -> [EnvVarMeta]
@@ -17,6 +19,15 @@ protocol VercelAPIClient: ProjectInspectionAPI, WebAnalyticsAPI {
     func promote(deploymentId: DeploymentID, projectId: ProjectID, teamId: TeamID?) async throws
     func rollback(deploymentId: DeploymentID, projectId: ProjectID, teamId: TeamID?) async throws
     func productionDeploymentID(projectId: ProjectID, teamId: TeamID?) async throws -> DeploymentID?
+}
+
+extension VercelAPIClient {
+    /// Clients without server-side filters search their newest window locally.
+    func searchDeployments(projectId: ProjectID, teamId: TeamID?, query: DeploymentQuery) async throws -> [VercelDeploymentSummary] {
+        let now = Date()
+        let window = try await listDeployments(projectId: projectId, teamId: teamId, limit: DeploymentQuery.maximumLimit)
+        return Array(window.filter { query.matches($0, now: now) }.prefix(query.limit))
+    }
 }
 
 final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
@@ -186,6 +197,32 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
             until = next
         }
         return deployments.compactMap(mapRawDeployment).prefix(requested).map { $0 }
+    }
+
+    func searchDeployments(projectId: ProjectID, teamId: TeamID?, query: DeploymentQuery) async throws -> [VercelDeploymentSummary] {
+        let now = Date()
+        let filters = query.apiParameters(now: now)
+        let wanted = max(1, query.limit)
+        var matches: [VercelDeploymentSummary] = []
+        var fetched = 0
+        var until = filters["until"].flatMap(Int.init)
+        // Vercel filters state, target, branch, SHA and time on the server. Commit
+        // text is matched here, over at most `fetchLimit` newest server results.
+        for _ in 0..<maxPages where matches.count < wanted && fetched < query.fetchLimit {
+            var params = filters
+            params["projectId"] = projectId
+            params["limit"] = String(min(100, query.fetchLimit - fetched))
+            if let teamId { params["teamId"] = teamId }
+            if let until { params["until"] = String(until) }
+            let data = try await requestJSON(path: "/v7/deployments", query: params)
+            let page = (data["deployments"]?.array ?? []).compactMap(mapRawDeployment)
+            fetched += page.count
+            matches.append(contentsOf: page.filter { query.matches($0, now: now) })
+            let next = data["pagination"]?["next"]?.int
+            if page.isEmpty || next == nil || next == until { break }
+            until = next
+        }
+        return Array(matches.prefix(wanted))
     }
 
     func getDeployment(id: DeploymentID, teamId: TeamID?) async throws -> VercelDeploymentSummary {

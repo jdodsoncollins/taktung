@@ -23,7 +23,16 @@ final class AppSession {
     var deployments: [VercelDeploymentSummary] = []
     var selectedDeployment: VercelDeploymentSummary?
     var recentActivity: [ActivityItem] = []
-    private(set) var evidenceScope: EvidenceScope?
+    private(set) var evidenceScope: EvidenceScope? {
+        didSet { if oldValue != evidenceScope { recentSearches = [] } }
+    }
+    /// Deployments returned by Search for the selected site. Detail, inspection
+    /// and confirmed actions accept them like loaded deployments until the scope changes.
+    private(set) var searchedDeployments: [VercelDeploymentSummary] = []
+    /// This launch's submitted searches for the current account, newest first. Memory only.
+    private(set) var recentSearches: [String] = []
+    /// A search to run once Search appears for a newly selected site.
+    var pendingSearch: String?
     private(set) var historyStorageError: String?
     private(set) var historyIsBusy = false
     @ObservationIgnored let evidenceStore: LocalEvidenceStore
@@ -59,6 +68,12 @@ final class AppSession {
     }
 
     var showsSearch: Bool { onDeviceAvailable || isDemoMode }
+
+    /// Loaded deployments plus Search results for the same site and scope.
+    var knownDeployments: [VercelDeploymentSummary] {
+        let loaded = Set(deployments.map(\.id))
+        return deployments + searchedDeployments.filter { !loaded.contains($0.id) }
+    }
 
     var canDiagnose: Bool { selectedProject != nil }
 
@@ -108,7 +123,7 @@ final class AppSession {
     private func inspectionAPI(scope: InspectionScope, deploymentID: DeploymentID?) async throws -> any VercelAPIClient {
         guard inspectionScope == scope else { throw CancellationError() }
         if let deploymentID {
-            guard deployments.contains(where: { $0.id == deploymentID }) || selectedProject?.productionDeployment?.id == deploymentID else {
+            guard knownDeployments.contains(where: { $0.id == deploymentID }) || selectedProject?.productionDeployment?.id == deploymentID else {
                 throw VercelAPIError(status: 404, detail: "Deployment is no longer in this project's snapshot.")
             }
         }
@@ -122,6 +137,7 @@ final class AppSession {
     @ObservationIgnored private let clientFactory: (String) -> any VercelAPIClient
     @ObservationIgnored private let modelAvailability: () -> Bool
     @ObservationIgnored private let briefGenerator: @Sendable (String) async -> String?
+    @ObservationIgnored private let searchPlanner: @Sendable (String, [String]) async -> SearchModelDraft?
     @ObservationIgnored private var briefTask: Task<String?, Never>?
     @ObservationIgnored private var briefRequestID: UUID?
     @ObservationIgnored private var briefRequestKey: BriefReuseCache.Key?
@@ -133,7 +149,7 @@ final class AppSession {
     private var hasBootstrapped = false
     @ObservationIgnored private let isDemoMode: Bool
     private var scopeGeneration = 0 {
-        didSet { domainSignals = nil; runtimeSignals = nil }
+        didSet { domainSignals = nil; runtimeSignals = nil; searchedDeployments = [] }
     }
     @ObservationIgnored private var domainSignals: (scope: InspectionScope, date: Date, unverified: Int)?
     @ObservationIgnored private var runtimeSignals: (scope: InspectionScope, date: Date, deploymentID: String, records: Int, errors: Int)?
@@ -143,6 +159,7 @@ final class AppSession {
     init(evidenceStore: LocalEvidenceStore = LocalEvidenceStore(), demoMode: Bool = DemoMode.isEnabled, keychain: KeychainStore = KeychainStore(),
          modelAvailability: @escaping () -> Bool = { OnDevicePlanner.isAvailable },
          briefGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.brief(context: $0) },
+         searchPlanner: @escaping @Sendable (String, [String]) async -> SearchModelDraft? = { await OnDevicePlanner.planSearch(query: $0, siteNames: $1) },
          clientFactory: @escaping (String) -> any VercelAPIClient = { token in LiveVercelAPIClient(tokenProvider: { token }) }) {
         self.evidenceStore = evidenceStore
         self.isDemoMode = demoMode
@@ -150,6 +167,7 @@ final class AppSession {
         self.clientFactory = clientFactory
         self.modelAvailability = modelAvailability
         self.briefGenerator = briefGenerator
+        self.searchPlanner = searchPlanner
     }
 
     var hasLocalAccountData: Bool { evidenceScope != nil || tokenSource != nil || connection.user != nil }
@@ -390,14 +408,14 @@ final class AppSession {
             selectedDeployment = nil
             return
         }
-        if let existing = deployments.first(where: { $0.id == id }) {
+        if let existing = knownDeployments.first(where: { $0.id == id }) {
             selectedDeployment = existing
         }
         guard let api = try? await ensureAPI() else { return }
         do {
             let loaded = try await api.getDeployment(id: id, teamId: connection.selectedTeamId)
             guard scope == scopeGeneration, deploymentSelection == id,
-                  sourceDeploymentBelongsToProject(id, projectDeployments: deployments) else { return }
+                  sourceDeploymentBelongsToProject(id, projectDeployments: knownDeployments) else { return }
             selectedDeployment = loaded
         } catch {
             guard scope == scopeGeneration, deploymentSelection == id else { return }
@@ -535,6 +553,46 @@ final class AppSession {
         if route.action == .checkHealth { await runOpsBrief() }
     }
 
+    /// Rules first; Apple Intelligence reads only requests the rules cannot place.
+    func interpretSearch(_ text: String) async -> SiteSearchInterpretation {
+        let rules = planSiteSearch(text, projects: projects, selectedProjectID: selectedProjectId)
+        guard rules.needsModel, !isDemoMode else { return rules }
+        refreshModelAvailability()
+        guard onDeviceAvailable else { return rules }
+        let scope = scopeGeneration
+        let draft = await searchPlanner(text, projects.map(siteTitle))
+        guard !Task.isCancelled, scope == scopeGeneration else { return rules }
+        guard let draft, let plan = SearchModelPolicy.plan(draft, query: text, rules: rules, projects: projects,
+                                                           selectedProjectID: selectedProjectId) else { return rules }
+        return SiteSearchInterpretation(plan: plan, interpreter: .appleIntelligence)
+    }
+
+    /// A live, read-only `GET /v7/deployments` for the selected site.
+    func searchDeployments(_ query: DeploymentQuery) async throws -> [VercelDeploymentSummary] {
+        guard let projectID = selectedProjectId else { throw CancellationError() }
+        let scope = scopeGeneration
+        let teamID = connection.selectedTeamId
+        let api = try await ensureAPI()
+        let found = try await api.searchDeployments(projectId: projectID, teamId: teamID, query: query)
+        try Task.checkCancellation()
+        guard scope == scopeGeneration, selectedProjectId == projectID, connection.selectedTeamId == teamID else {
+            throw CancellationError()
+        }
+        let foundIDs = Set(found.map(\.id))
+        searchedDeployments = Array((found + searchedDeployments.filter { !foundIDs.contains($0.id) }).prefix(300))
+        return found
+    }
+
+    func rememberSearch(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !containsSecretLike(trimmed) else { return }
+        recentSearches.removeAll { $0.caseInsensitiveCompare(trimmed) == .orderedSame }
+        recentSearches.insert(trimmed, at: 0)
+        recentSearches = Array(recentSearches.prefix(5))
+    }
+
+    func clearRecentSearches() { recentSearches = [] }
+
     func runEnvDrift() async {
         guard let project = selectedProject, let api = try? await ensureAPI() else { return }
         let scope = scopeGeneration
@@ -625,7 +683,7 @@ final class AppSession {
 
     func deploymentForDisplay(_ summary: VercelDeploymentSummary) -> VercelDeploymentSummary {
         if let current = selectedDeployment, current.id == summary.id,
-           sourceDeploymentBelongsToProject(current.id, projectDeployments: deployments) { return current }
+           sourceDeploymentBelongsToProject(current.id, projectDeployments: knownDeployments) { return current }
         return summary
     }
 
@@ -639,7 +697,7 @@ final class AppSession {
             lastError = "Pick a deployment first."
             return
         }
-        guard sourceDeploymentBelongsToProject(deploy.id, projectDeployments: deployments) else {
+        guard sourceDeploymentBelongsToProject(deploy.id, projectDeployments: knownDeployments) else {
             lastError = "The deployment does not belong to the selected site. Refresh and try again."
             return
         }
@@ -684,7 +742,7 @@ final class AppSession {
     func confirmMutation(_ pending: PendingMutation) async {
         guard let project = selectedProject,
               pending.action.projectId == project.id,
-              pending.action.deploymentId.map({ sourceDeploymentBelongsToProject($0, projectDeployments: deployments) }) == true,
+              pending.action.deploymentId.map({ sourceDeploymentBelongsToProject($0, projectDeployments: knownDeployments) }) == true,
               mutationConfirmation(for: pending.action)?.teamId == connection.selectedTeamId else {
             lastError = "Confirmation did not match the planned mutation."
             return

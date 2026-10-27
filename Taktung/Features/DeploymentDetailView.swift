@@ -57,7 +57,7 @@ struct DeploymentDetailView: View {
                     Label("Deployment actions", systemImage: "ellipsis.circle")
                         .font(.subheadline.weight(.medium)).frame(maxWidth: .infinity, minHeight: 44)
                 }.accessibilityIdentifier("takt.detail.actions")
-                .disabled(session.isBusy || !session.deployments.contains { $0.id == deployment.id })
+                .disabled(session.isBusy || !session.knownDeployments.contains { $0.id == deployment.id })
             }
         }
         .navigationTitle("Deployment")
