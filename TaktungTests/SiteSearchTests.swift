@@ -190,7 +190,7 @@ struct DeploymentQueryTests {
     }
 
     @Test func titlesAndCaptionsDescribeWhatCameBack() {
-        #expect(DeploymentQuery(states: DeploymentQuery.inFlightStates.union([.ready])).title == "Deployments that didn't fail")
+        #expect(DeploymentQuery(states: DeploymentQuery.inFlightStates.union([.ready])).title == "Deployments that didn’t fail")
         #expect(DeploymentQuery(states: [.ready], target: .production, limit: 1).title == "Latest ready production deployment")
         let ready = DeploymentQuery(states: [.ready])
         #expect(ready.coverage(count: 16) == "All 16 matches from Vercel.")

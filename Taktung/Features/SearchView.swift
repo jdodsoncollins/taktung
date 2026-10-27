@@ -129,12 +129,14 @@ struct SearchView: View {
         case .otherSite(let project, let q):
             VStack(alignment: .leading, spacing: Spacing.md) {
                 resultsHeader(q.title, query: nil, interpreter: .rules)
-                outcome("Search \(siteTitle(project))?", systemImage: "globe",
-                        detail: "This search names a different site. Switch to it to search its deployments.")
+                // The action comes first so it stays on screen at accessibility sizes.
                 PrimaryButton(title: "Switch to \(siteTitle(project))") {
                     session.pendingSearch = submittedQuery
                     Task { await session.selectProject(project.id) }
                 }
+                Text("This search names another site. Switching runs it there.")
+                    .font(.subheadline).foregroundStyle(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         case .environment:
             VStack(alignment: .leading, spacing: Spacing.md) {
@@ -151,11 +153,13 @@ struct SearchView: View {
         case .chooseSite:
             VStack(alignment: .leading, spacing: Spacing.md) {
                 resultsHeader("Choose a site", query: nil, interpreter: .rules)
-                outcome("One site at a time", systemImage: "globe", detail: "Deployment and environment searches use the selected site. Choose one and this search runs there.")
                 PrimaryButton(title: "Choose a site") {
                     session.pendingSearch = submittedQuery
                     session.sitePickerOpen = true
                 }
+                Text("Deployment and environment searches use one site. Choose one and this search runs there.")
+                    .font(.subheadline).foregroundStyle(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         case .noMatch:
             VStack(alignment: .leading, spacing: Spacing.md) {

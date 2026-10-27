@@ -89,7 +89,7 @@ struct DeploymentQuery: Hashable, Sendable {
         var words = [notFailed ? nil : stateLabel, target.map { $0.rawValue.capitalized }].compactMap { $0 }
         if limit == 1 { words.insert("Latest", at: 0) }
         words.append(limit == 1 ? "deployment" : "deployments")
-        if notFailed { words.append("that didn't fail") }
+        if notFailed { words.append("that didn’t fail") }
         let first = words[0].prefix(1).uppercased() + words[0].dropFirst()
         return ([first] + words.dropFirst().map { $0.lowercased() }).joined(separator: " ")
     }
