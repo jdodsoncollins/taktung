@@ -1,0 +1,713 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-12T05:39:56.666897Z",
+  "title": "Design System: Taktung",
+  "extensions": {
+    "colorMeta": {
+      "accent-light": {
+        "role": "primary",
+        "displayName": "Quiet Teal (light)",
+        "tonalRamp": [
+          "oklch(15% 0.07761 187.77)",
+          "oklch(26% 0.07761 187.77)",
+          "oklch(37% 0.07761 187.77)",
+          "oklch(48% 0.07761 187.77)",
+          "oklch(59% 0.07761 187.77)",
+          "oklch(70% 0.07761 187.77)",
+          "oklch(82% 0.07761 187.77)",
+          "oklch(95% 0.07761 187.77)"
+        ]
+      },
+      "accent-dark": {
+        "role": "primary",
+        "displayName": "Quiet Teal (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.08861 187.41)",
+          "oklch(26% 0.08861 187.41)",
+          "oklch(37% 0.08861 187.41)",
+          "oklch(48% 0.08861 187.41)",
+          "oklch(59% 0.08861 187.41)",
+          "oklch(70% 0.08861 187.41)",
+          "oklch(82% 0.08861 187.41)",
+          "oklch(95% 0.08861 187.41)"
+        ]
+      },
+      "canvas-light": {
+        "role": "neutral",
+        "displayName": "Canvas (light)",
+        "tonalRamp": [
+          "oklch(15% 0.00287 264.54)",
+          "oklch(26% 0.00287 264.54)",
+          "oklch(37% 0.00287 264.54)",
+          "oklch(48% 0.00287 264.54)",
+          "oklch(59% 0.00287 264.54)",
+          "oklch(70% 0.00287 264.54)",
+          "oklch(82% 0.00287 264.54)",
+          "oklch(95% 0.00287 264.54)"
+        ]
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Canvas (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.00624 236.93)",
+          "oklch(26% 0.00624 236.93)",
+          "oklch(37% 0.00624 236.93)",
+          "oklch(48% 0.00624 236.93)",
+          "oklch(59% 0.00624 236.93)",
+          "oklch(70% 0.00624 236.93)",
+          "oklch(82% 0.00624 236.93)",
+          "oklch(95% 0.00624 236.93)"
+        ]
+      },
+      "surface-light": {
+        "role": "neutral",
+        "displayName": "Surface (light)",
+        "tonalRamp": [
+          "oklch(15% 0.00000 0.00)",
+          "oklch(26% 0.00000 0.00)",
+          "oklch(37% 0.00000 0.00)",
+          "oklch(48% 0.00000 0.00)",
+          "oklch(59% 0.00000 0.00)",
+          "oklch(70% 0.00000 0.00)",
+          "oklch(82% 0.00000 0.00)",
+          "oklch(95% 0.00000 0.00)"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Surface (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.00829 240.24)",
+          "oklch(26% 0.00829 240.24)",
+          "oklch(37% 0.00829 240.24)",
+          "oklch(48% 0.00829 240.24)",
+          "oklch(59% 0.00829 240.24)",
+          "oklch(70% 0.00829 240.24)",
+          "oklch(82% 0.00829 240.24)",
+          "oklch(95% 0.00829 240.24)"
+        ]
+      },
+      "surface-muted-light": {
+        "role": "neutral",
+        "displayName": "Muted Surface (light)",
+        "tonalRamp": [
+          "oklch(15% 0.00344 247.86)",
+          "oklch(26% 0.00344 247.86)",
+          "oklch(37% 0.00344 247.86)",
+          "oklch(48% 0.00344 247.86)",
+          "oklch(59% 0.00344 247.86)",
+          "oklch(70% 0.00344 247.86)",
+          "oklch(82% 0.00344 247.86)",
+          "oklch(95% 0.00344 247.86)"
+        ]
+      },
+      "surface-muted-dark": {
+        "role": "neutral",
+        "displayName": "Muted Surface (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.01018 242.04)",
+          "oklch(26% 0.01018 242.04)",
+          "oklch(37% 0.01018 242.04)",
+          "oklch(48% 0.01018 242.04)",
+          "oklch(59% 0.01018 242.04)",
+          "oklch(70% 0.01018 242.04)",
+          "oklch(82% 0.01018 242.04)",
+          "oklch(95% 0.01018 242.04)"
+        ]
+      },
+      "text-secondary-light": {
+        "role": "neutral",
+        "displayName": "Secondary Ink (light)",
+        "tonalRamp": [
+          "oklch(15% 0.01782 242.05)",
+          "oklch(26% 0.01782 242.05)",
+          "oklch(37% 0.01782 242.05)",
+          "oklch(48% 0.01782 242.05)",
+          "oklch(59% 0.01782 242.05)",
+          "oklch(70% 0.01782 242.05)",
+          "oklch(82% 0.01782 242.05)",
+          "oklch(95% 0.01782 242.05)"
+        ]
+      },
+      "text-secondary-dark": {
+        "role": "neutral",
+        "displayName": "Secondary Ink (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.01501 238.08)",
+          "oklch(26% 0.01501 238.08)",
+          "oklch(37% 0.01501 238.08)",
+          "oklch(48% 0.01501 238.08)",
+          "oklch(59% 0.01501 238.08)",
+          "oklch(70% 0.01501 238.08)",
+          "oklch(82% 0.01501 238.08)",
+          "oklch(95% 0.01501 238.08)"
+        ]
+      },
+      "action-light": {
+        "role": "neutral",
+        "displayName": "Action Ink (light)",
+        "tonalRamp": [
+          "oklch(15% 0.01852 225.20)",
+          "oklch(26% 0.01852 225.20)",
+          "oklch(37% 0.01852 225.20)",
+          "oklch(48% 0.01852 225.20)",
+          "oklch(59% 0.01852 225.20)",
+          "oklch(70% 0.01852 225.20)",
+          "oklch(82% 0.01852 225.20)",
+          "oklch(95% 0.01852 225.20)"
+        ]
+      },
+      "action-dark": {
+        "role": "neutral",
+        "displayName": "Action Ink (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.00700 219.56)",
+          "oklch(26% 0.00700 219.56)",
+          "oklch(37% 0.00700 219.56)",
+          "oklch(48% 0.00700 219.56)",
+          "oklch(59% 0.00700 219.56)",
+          "oklch(70% 0.00700 219.56)",
+          "oklch(82% 0.00700 219.56)",
+          "oklch(95% 0.00700 219.56)"
+        ]
+      },
+      "text-on-action-light": {
+        "role": "neutral",
+        "displayName": "On-Action Ink (light)",
+        "tonalRamp": [
+          "oklch(15% 0.00000 0.00)",
+          "oklch(26% 0.00000 0.00)",
+          "oklch(37% 0.00000 0.00)",
+          "oklch(48% 0.00000 0.00)",
+          "oklch(59% 0.00000 0.00)",
+          "oklch(70% 0.00000 0.00)",
+          "oklch(82% 0.00000 0.00)",
+          "oklch(95% 0.00000 0.00)"
+        ]
+      },
+      "text-on-action-dark": {
+        "role": "neutral",
+        "displayName": "On-Action Ink (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.01500 226.81)",
+          "oklch(26% 0.01500 226.81)",
+          "oklch(37% 0.01500 226.81)",
+          "oklch(48% 0.01500 226.81)",
+          "oklch(59% 0.01500 226.81)",
+          "oklch(70% 0.01500 226.81)",
+          "oklch(82% 0.01500 226.81)",
+          "oklch(95% 0.01500 226.81)"
+        ]
+      },
+      "text-on-accent-light": {
+        "role": "primary",
+        "displayName": "On-Teal Ink (light)",
+        "tonalRamp": [
+          "oklch(15% 0.00000 0.00)",
+          "oklch(26% 0.00000 0.00)",
+          "oklch(37% 0.00000 0.00)",
+          "oklch(48% 0.00000 0.00)",
+          "oklch(59% 0.00000 0.00)",
+          "oklch(70% 0.00000 0.00)",
+          "oklch(82% 0.00000 0.00)",
+          "oklch(95% 0.00000 0.00)"
+        ]
+      },
+      "text-on-accent-dark": {
+        "role": "primary",
+        "displayName": "On-Teal Ink (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.03445 186.15)",
+          "oklch(26% 0.03445 186.15)",
+          "oklch(37% 0.03445 186.15)",
+          "oklch(48% 0.03445 186.15)",
+          "oklch(59% 0.03445 186.15)",
+          "oklch(70% 0.03445 186.15)",
+          "oklch(82% 0.03445 186.15)",
+          "oklch(95% 0.03445 186.15)"
+        ]
+      },
+      "danger-light": {
+        "role": "secondary",
+        "displayName": "Error Red (light)",
+        "tonalRamp": [
+          "oklch(15% 0.18205 29.51)",
+          "oklch(26% 0.18205 29.51)",
+          "oklch(37% 0.18205 29.51)",
+          "oklch(48% 0.18205 29.51)",
+          "oklch(59% 0.18205 29.51)",
+          "oklch(70% 0.18205 29.51)",
+          "oklch(82% 0.18205 29.51)",
+          "oklch(95% 0.18205 29.51)"
+        ]
+      },
+      "danger-dark": {
+        "role": "secondary",
+        "displayName": "Error Red (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.10034 25.46)",
+          "oklch(26% 0.10034 25.46)",
+          "oklch(37% 0.10034 25.46)",
+          "oklch(48% 0.10034 25.46)",
+          "oklch(59% 0.10034 25.46)",
+          "oklch(70% 0.10034 25.46)",
+          "oklch(82% 0.10034 25.46)",
+          "oklch(95% 0.10034 25.46)"
+        ]
+      },
+      "ready-light": {
+        "role": "secondary",
+        "displayName": "Ready Green (light)",
+        "tonalRamp": [
+          "oklch(15% 0.09653 159.91)",
+          "oklch(26% 0.09653 159.91)",
+          "oklch(37% 0.09653 159.91)",
+          "oklch(48% 0.09653 159.91)",
+          "oklch(59% 0.09653 159.91)",
+          "oklch(70% 0.09653 159.91)",
+          "oklch(82% 0.09653 159.91)",
+          "oklch(95% 0.09653 159.91)"
+        ]
+      },
+      "ready-dark": {
+        "role": "secondary",
+        "displayName": "Ready Green (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.09788 159.71)",
+          "oklch(26% 0.09788 159.71)",
+          "oklch(37% 0.09788 159.71)",
+          "oklch(48% 0.09788 159.71)",
+          "oklch(59% 0.09788 159.71)",
+          "oklch(70% 0.09788 159.71)",
+          "oklch(82% 0.09788 159.71)",
+          "oklch(95% 0.09788 159.71)"
+        ]
+      },
+      "building-light": {
+        "role": "secondary",
+        "displayName": "Building Amber (light)",
+        "tonalRamp": [
+          "oklch(15% 0.10575 72.32)",
+          "oklch(26% 0.10575 72.32)",
+          "oklch(37% 0.10575 72.32)",
+          "oklch(48% 0.10575 72.32)",
+          "oklch(59% 0.10575 72.32)",
+          "oklch(70% 0.10575 72.32)",
+          "oklch(82% 0.10575 72.32)",
+          "oklch(95% 0.10575 72.32)"
+        ]
+      },
+      "building-dark": {
+        "role": "secondary",
+        "displayName": "Building Amber (dark)",
+        "tonalRamp": [
+          "oklch(15% 0.10162 80.76)",
+          "oklch(26% 0.10162 80.76)",
+          "oklch(37% 0.10162 80.76)",
+          "oklch(48% 0.10162 80.76)",
+          "oklch(59% 0.10162 80.76)",
+          "oklch(70% 0.10162 80.76)",
+          "oklch(82% 0.10162 80.76)",
+          "oklch(95% 0.10162 80.76)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Title",
+        "purpose": ".title2.weight(.semibold)",
+        "nativeStyle": ".title2.weight(.semibold)",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "detail-title": {
+        "displayName": "Detail Title",
+        "purpose": ".title3.weight(.semibold)",
+        "nativeStyle": ".title3.weight(.semibold)",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": ".headline",
+        "nativeStyle": ".headline",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": ".body",
+        "nativeStyle": ".body",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "body-medium": {
+        "displayName": "Body Medium",
+        "purpose": ".body.weight(.medium)",
+        "nativeStyle": ".body.weight(.medium)",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "subheadline": {
+        "displayName": "Subheadline",
+        "purpose": ".subheadline",
+        "nativeStyle": ".subheadline",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "subheadline-semibold": {
+        "displayName": "Subheadline Semibold",
+        "purpose": ".subheadline.weight(.semibold)",
+        "nativeStyle": ".subheadline.weight(.semibold)",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "footnote": {
+        "displayName": "Footnote",
+        "purpose": ".footnote",
+        "nativeStyle": ".footnote",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": ".caption.weight(.medium)",
+        "nativeStyle": ".caption.weight(.medium)",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": ".caption",
+        "nativeStyle": ".caption",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "identifier": {
+        "displayName": "Identifier",
+        "purpose": "Menlo 13, relativeTo: .subheadline",
+        "nativeStyle": "Menlo 13, relativeTo: .subheadline",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "identifier-small": {
+        "displayName": "Identifier Small",
+        "purpose": "Menlo 12, relativeTo: .caption",
+        "nativeStyle": "Menlo 12, relativeTo: .caption",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      },
+      "path": {
+        "displayName": "Path",
+        "purpose": "Menlo 14, relativeTo: .subheadline",
+        "nativeStyle": "Menlo 14, relativeTo: .subheadline",
+        "scaling": "SwiftUI Dynamic Type; frontmatter size is default-size equivalent."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "field-log-new-entry-jump",
+        "value": "ease-in-out 200ms",
+        "purpose": "Scroll to latest visible records only when Reduce Motion is false."
+      }
+    ],
+    "breakpoints": [],
+    "nativeSemanticColors": {
+      "text": "SwiftUI Color.primary",
+      "border": "UIKit UIColor.separator",
+      "separator": "Alias of border",
+      "settingsRows": "Native insetGrouped list backgrounds"
+    },
+    "nativeLayout": {
+      "expandedCondition": "iOS 27.1: regular horizontal size class OR active reserved division region",
+      "expandedArrangement": "ArrangementView split; independently scrolling panes",
+      "fallback": "Regular width: HStack. Compact: stacked ScrollView.",
+      "paneMaximumWidth": "760pt",
+      "paneInset": "16pt",
+      "siteTitleMaximumWidth": {
+        "compact": "210pt",
+        "regular": "360pt"
+      },
+      "pointUnits": "pt are iOS points. Sidecar browser snippets use equivalent CSS px as schematic previews."
+    },
+    "nativeDepth": {
+      "content": "Opaque tonal surfaces; no custom shadows.",
+      "plateEdge": "0.5pt native separator stroke",
+      "journalRail": "1pt native separator",
+      "chrome": "System navigation Liquid Glass and platform sheet transitions."
+    },
+    "nativeComponentStates": {
+      "focus": "Platform-owned SwiftUI focus and activation. Browser focus outlines are panel-only translations.",
+      "disabledCustomButtonOpacity": 0.45,
+      "dangerButton": "Declared in shared source but not rendered by inspected call sites; not canonized.",
+      "controlMinimumHeight": "44pt for custom primary/ghost buttons and filter chips; carried here because the frontmatter schema has no minHeight property."
+    },
+    "previewPolicy": {
+      "tonalRamps": "Eight-step OKLCH strips synthesized for the design panel. Runtime uses exact light/dark pairs in DESIGN.md; ramps are not runtime tokens.",
+      "snippets": "Self-contained schematic HTML/CSS translations of SwiftUI. They do not replace native controls or establish detector, capture, hardware or App Store evidence.",
+      "semanticColorApproximation": "CSS CanvasText/Canvas and translucent edge values are browser preview stand-ins; native semantic colors remain authoritative.",
+      "icons": "Inline geometric SVG stand-ins in panel previews. Shipping UI uses SF Symbols and attributed raster assets."
+    },
+    "provenance": {
+      "iconOrigins": "docs/settings-icon-provenance.md",
+      "appRasterAudit": "Icon C finish packet reports four shipping app rasters, all with embedded provenance; zero missing attribution.",
+      "referenceAuthority": ".impeccable/surfaces/taktung-features-homeview-swift.md; PRODUCT.md; user-pinned developer-tool examples."
+    },
+    "verificationBoundary": {
+      "reviewDisposition": "ship for scored Settings prompt correction, per finish-verdict-1.md",
+      "promptContrastReported": {
+        "light": "6.14:1",
+        "dark": "6.76:1"
+      },
+      "detector": "Not run: native SwiftUI lies outside HTML/CSS detector.",
+      "physicalAI": "Latency unverified; paired phone unreachable in finish packet.",
+      "duo": "Simulator pose controls and native LCD captures establish layout/appearance evidence; physical posture/gesture performance remains unverified. 3D mirror unavailable; new comparison/history/settings tap flows exercised on phone and iPad.",
+      "appStore": "Export and submission are separate operations; no submission-state assertion.",
+      "iconC": "Scoped icon construction, fidelity, centered body/base, rendered variants, small-size readability and native phone/iPad light/dark Settings review; ship disposition in icon-c-center-review.md. Unchanged app behavior, Dynamic Type regression and physical-device performance were not reverified for this SVG-only correction."
+    },
+    "sources": [
+      "Taktung/DesignSystem/Theme.swift",
+      "Taktung/DesignSystem/Components.swift",
+      "Taktung/DesignSystem/AdaptiveWorkspace.swift",
+      "Taktung/DesignSystem/DeploymentPreviewThumb.swift",
+      "Taktung/Features/HomeView.swift",
+      "Taktung/Features/SiteRackView.swift",
+      "Taktung/Features/RootView.swift",
+      "Taktung/Features/VisualComparisonView.swift",
+      "Taktung/Features/ActivityView.swift",
+      "Taktung/Features/SettingsView.swift",
+      "Taktung/Features/SearchView.swift",
+      "Taktung/Features/DeploymentDetailView.swift",
+      ".impeccable/review/finish-review-packet.json",
+      ".impeccable/review/finish-review-1.md",
+      ".impeccable/review/finish-verdict-1.md",
+      ".impeccable/review/icon-c-finish-packet.json",
+      ".impeccable/review/icon-c-finish-review.md",
+      ".impeccable/review/icon-c-finish-verdict.md",
+      ".impeccable/review/icon-c-center-packet.json",
+      ".impeccable/review/icon-c-center-review.md",
+      ".asc/qa/icon-1.5.0-41/centering-proof.json",
+      "Taktung/AppIcon.icon/icon.json",
+      "Taktung/AppIcon.icon/Assets"
+    ],
+    "iconEvolution": {
+      "status": "user-selected C initially implemented for 1.5.0 (40); centered body/base verified and submitted for 1.5.0 (41), Waiting for Review; release state is tracked separately in docs/release-1.5.0.md",
+      "brief": "docs/icon-direction.md",
+      "alternatives": [
+        "split inspection frame",
+        "overlapping evidence pages"
+      ],
+      "delivery": "standard layered Xcode/Icon Composer .icon with editable foreground parts, intentional Default/light and Dark appearances, and preserved tinted/mono support",
+      "palette": "existing neutral/teal pairs; no new shipping tokens",
+      "settings": "52pt TaktungMark regenerated from verified build 41 Apple Default/light and Dark renders; resolved in-app System/Light/Dark appearance selects the asset variant",
+      "homeScreen": "system-owned icon appearance; installed Home Screen capture verifies Dark; Default/light is verified in Apple renderer and Settings",
+      "marketing": "flat numbered inspection sheets; three icon-bearing Settings captures refreshed",
+      "selected": "C \u2014 abstract metronome",
+      "construction": "separate Frame, Pendulum and Counterweight SVG layers; separate Default/light and Dark background fills; three independent Tinted foreground parts with automatic system fill",
+      "geometry": "shared frame paths, pendulum endpoints and width, and counterweight coordinates across all three appearances; body/base share x=512 on a 1024px canvas with zero layer translation; crossing and disk clearance remain visible in small and tinted/mono renders",
+      "verification": {
+        "appleRenderer": "Apple Icon Composer ictool parsed/rendered centered Default/light, Dark and Tinted plus 120px small previews.",
+        "xcode": "Build 41 selected .icon built and archived in Xcode.",
+        "settings": "Matching build 41 Apple renderer artwork inspected in native iPhone and iPad Settings in Light/Dark, including forced in-app appearance.",
+        "review": ".impeccable/review/icon-c-center-review.md (disposition: ship)",
+        "boundary": "Scoped design evidence only; no physical hardware, Dynamic Type regression or App Store submission assertion.",
+        "processedIcon": "Apple-processed build 41 icon inspected with the centered C structure."
+      },
+      "alignment": {
+        "canvas": [
+          1024,
+          1024
+        ],
+        "sharedCenterX": 512,
+        "base": {
+          "left": 186,
+          "right": 838,
+          "width": 652
+        },
+        "bodyMirrorPairs": {
+          "outerFeet": [
+            229,
+            795
+          ],
+          "innerFeet": [
+            294,
+            730
+          ],
+          "topOuter": [
+            442,
+            582
+          ],
+          "topInner": [
+            448,
+            576
+          ],
+          "outerShoulders": [
+            387,
+            637
+          ],
+          "quadraticControls": [
+            400,
+            624
+          ]
+        },
+        "mirrorPairSum": 1024,
+        "layerTranslation": [
+          0,
+          0
+        ],
+        "retainedPendulum": {
+          "endpoints": [
+            [
+              546,
+              742
+            ],
+            [
+              824,
+              220
+            ]
+          ],
+          "width": 44
+        },
+        "retainedCounterweight": {
+          "center": [
+            746,
+            371
+          ],
+          "radius": 58
+        },
+        "localClearance": {
+          "pendulumEdge": 10,
+          "counterweightDisk": 10,
+          "counterweightArcRadius": 68
+        },
+        "directionality": "The structural body/base are centered; the complete mark remains directional because the unchanged pendulum is angled.",
+        "proof": ".asc/qa/icon-1.5.0-41/centering-proof.json"
+      }
+    }
+  },
+  "components": [
+    {
+      "name": "Primary task button",
+      "kind": "button",
+      "refersTo": "button-primary-light",
+      "description": "Native custom PrimaryButton accent role; browser focus outline is a preview translation.",
+      "html": "<button class=\"ds-control ds-primary\">Capture comparison</button>",
+      "css": ".ds-primary{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;font-weight:500;min-height:44px;width:100%;padding:0 12px;border:0;border-radius:8px;color:#FFFFFF;background:#263237}@media(prefers-color-scheme:dark){.ds-primary{color:#182125;background:#E3E9EB}}.ds-control:hover{cursor:pointer}.ds-control:focus-visible{outline:2px solid #146B65;outline-offset:2px}.ds-control:active{cursor:pointer}.ds-control:disabled{opacity:.45;cursor:default}@media(prefers-color-scheme:dark){.ds-control:focus-visible{outline-color:#7BD6CD}}"
+    },
+    {
+      "name": "Ghost task button",
+      "kind": "button",
+      "refersTo": "button-ghost-light",
+      "description": "Retry and incident-summary variant with an opaque surface and native semantic edge.",
+      "html": "<button class=\"ds-control ds-ghost\">Retry logs</button>",
+      "css": ".ds-ghost{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;font-weight:500;min-height:44px;width:100%;padding:0 12px;border:.5px solid rgba(60,60,67,.29);border-radius:8px;background:#FFFFFF;color:CanvasText}@media(prefers-color-scheme:dark){.ds-ghost{background:#1B1F22;border-color:rgba(84,84,88,.6)}}.ds-control:hover{cursor:pointer}.ds-control:focus-visible{outline:2px solid #146B65;outline-offset:2px}.ds-control:active{cursor:pointer}.ds-control:disabled{opacity:.45;cursor:default}@media(prefers-color-scheme:dark){.ds-control:focus-visible{outline-color:#7BD6CD}}"
+    },
+    {
+      "name": "Evidence plate",
+      "kind": "card",
+      "refersTo": "plate-light",
+      "description": "Shared opaque Plate; sample copy describes the component rather than inventing deployment evidence.",
+      "html": "<section class=\"ds-plate\"><strong>Production</strong><p>Deployment title and provenance</p></section>",
+      "css": ".ds-plate{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:16px;border-radius:12px;border:.5px solid rgba(60,60,67,.29);background:#FFFFFF;color:CanvasText}.ds-plate strong{font-size:17px;font-weight:600}.ds-plate p{font-size:15px;color:#59636B;margin:8px 0 0}@media(prefers-color-scheme:dark){.ds-plate{background:#1B1F22;border-color:rgba(84,84,88,.6)}.ds-plate p{color:#ACB6BD}}"
+    },
+    {
+      "name": "Pane filter chips",
+      "kind": "chip",
+      "refersTo": "chip-selected-light",
+      "description": "Selected and unselected FilterChip states with a 44 point native minimum.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-control ds-chip ds-selected\" aria-pressed=\"true\">Compare</button><button class=\"ds-control ds-chip\" aria-pressed=\"false\">Logs</button></div>",
+      "css": ".ds-chips{display:flex;gap:8px}.ds-chip{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;min-height:44px;padding:8px 12px;border:.5px solid transparent;border-radius:8px;background:transparent;color:#59636B}.ds-selected{font-weight:600;color:CanvasText;background:#FFFFFF;border-color:rgba(60,60,67,.29)}@media(prefers-color-scheme:dark){.ds-chip{color:#ACB6BD}.ds-selected{color:CanvasText;background:#1B1F22;border-color:rgba(84,84,88,.6)}}.ds-control:hover{cursor:pointer}.ds-control:focus-visible{outline:2px solid #146B65;outline-offset:2px}.ds-control:active{cursor:pointer}.ds-control:disabled{opacity:.45;cursor:default}@media(prefers-color-scheme:dark){.ds-control:focus-visible{outline-color:#7BD6CD}}"
+    },
+    {
+      "name": "Workspace search field",
+      "kind": "input",
+      "refersTo": "search-field-light",
+      "description": "Search field with readable Secondary Ink prompt; native text-entry and focus remain authoritative.",
+      "html": "<input class=\"ds-control ds-search\" aria-label=\"Search workspace\" placeholder=\"Site name, ready, failed or environment\">",
+      "css": ".ds-search{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;padding:12px;border-radius:8px;border:.5px solid rgba(60,60,67,.29);background:#FFFFFF;color:CanvasText}.ds-search::placeholder{color:#59636B;opacity:1}@media(prefers-color-scheme:dark){.ds-search{background:#1B1F22;border-color:rgba(84,84,88,.6)}.ds-search::placeholder{color:#ACB6BD}}.ds-control:hover{cursor:pointer}.ds-control:focus-visible{outline:2px solid #146B65;outline-offset:2px}.ds-control:active{cursor:pointer}.ds-control:disabled{opacity:.45;cursor:default}@media(prefers-color-scheme:dark){.ds-control:focus-visible{outline-color:#7BD6CD}}"
+    },
+    {
+      "name": "Page path field",
+      "kind": "input",
+      "refersTo": "path-field-light",
+      "description": "Relative Menlo route entry in a muted surface.",
+      "html": "<input class=\"ds-control ds-path\" aria-label=\"Page path\" value=\"/\">",
+      "css": ".ds-path{font-family:Menlo,monospace;font-size:14px;padding:8px;border:0;border-radius:12px;background:#EEF0F2;color:CanvasText}@media(prefers-color-scheme:dark){.ds-path{background:#272C30}}.ds-control:hover{cursor:pointer}.ds-control:focus-visible{outline:2px solid #146B65;outline-offset:2px}.ds-control:active{cursor:pointer}.ds-control:disabled{opacity:.45;cursor:default}@media(prefers-color-scheme:dark){.ds-control:focus-visible{outline-color:#7BD6CD}}"
+    },
+    {
+      "name": "Ready state word",
+      "kind": "custom",
+      "refersTo": "state-ready-light",
+      "description": "Text and a geometric SVG stand-in for the native SF Symbol; no badge enclosure.",
+      "html": "<span class=\"ds-state\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"currentColor\"/><path d=\"m4.5 8 2.2 2.2 4.8-5\" fill=\"none\" stroke=\"white\" stroke-width=\"1.7\"/></svg>Ready</span>",
+      "css": ".ds-state{font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#23734F;font-variant-numeric:tabular-nums}@media(prefers-color-scheme:dark){.ds-state{color:#8BD9AF}.ds-state path{stroke:#111416}}"
+    },
+    {
+      "name": "Native section navigation",
+      "kind": "nav",
+      "description": "Text-only panel schematic of native top-level sections; actual TabView and glass are system-rendered.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"App sections\"><button class=\"ds-control ds-tab ds-active\" aria-current=\"page\">Home</button><button class=\"ds-control ds-tab\">Deploys</button><button class=\"ds-control ds-tab\">Activity</button></nav>",
+      "css": ".ds-nav{display:flex;gap:8px;background:Canvas;padding:8px}.ds-tab{font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:44px;font-size:12px;border:0;background:transparent;color:CanvasText}.ds-active{color:#146B65}@media(prefers-color-scheme:dark){.ds-active{color:#7BD6CD}}.ds-control:hover{cursor:pointer}.ds-control:focus-visible{outline:2px solid #146B65;outline-offset:2px}.ds-control:active{cursor:pointer}.ds-control:disabled{opacity:.45;cursor:default}@media(prefers-color-scheme:dark){.ds-control:focus-visible{outline-color:#7BD6CD}}"
+    },
+    {
+      "name": "Comparison reveal mechanism",
+      "kind": "custom",
+      "refersTo": "reveal-handle-light",
+      "description": "Schematic geometry only. The shipping component displays genuine captures with commit, route and time provenance; this preview contains no page evidence.",
+      "html": "<figure class=\"ds-comparison\"><div class=\"ds-canvas\"><span class=\"ds-before\">Baseline capture</span><span class=\"ds-after\">Candidate capture</span><div class=\"ds-divider\"><button class=\"ds-control ds-handle\" aria-label=\"Reveal baseline\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h16M9 7l-5 5 5 5m6-10 5 5-5 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></button></div></div><input class=\"ds-control ds-slider\" type=\"range\" min=\"0\" max=\"100\" value=\"50\" aria-label=\"Reveal baseline\"><figcaption>Baseline / Candidate \u00b7 commit \u00b7 route \u00b7 capture time</figcaption></figure>",
+      "css": ".ds-comparison{font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0}.ds-canvas{position:relative;aspect-ratio:390/844;max-height:300px;background:#EEF0F2;border-radius:12px;overflow:hidden;display:flex;color:#59636B}.ds-before,.ds-after{flex:1;padding:12px;font-size:12px}.ds-after{background:#FFFFFF}.ds-divider{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#146B65}.ds-handle{position:absolute;top:50%;left:1px;transform:translate(-50%,-50%);height:44px;width:44px;border:0;border-radius:50%;display:grid;place-items:center;background:#146B65;color:#FFFFFF}.ds-slider{width:100%;accent-color:#146B65}.ds-comparison figcaption{font-size:12px;color:#59636B;margin-top:8px}@media(prefers-color-scheme:dark){.ds-canvas{background:#272C30;color:#ACB6BD}.ds-after{background:#1B1F22}.ds-divider,.ds-handle{background:#7BD6CD}.ds-handle{color:#112D2A}.ds-slider{accent-color:#7BD6CD}.ds-comparison figcaption{color:#ACB6BD}}.ds-control:hover{cursor:pointer}.ds-control:focus-visible{outline:2px solid #146B65;outline-offset:2px}.ds-control:active{cursor:pointer}.ds-control:disabled{opacity:.45;cursor:default}@media(prefers-color-scheme:dark){.ds-control:focus-visible{outline-color:#7BD6CD}}"
+    },
+    {
+      "name": "Field Log temporal row",
+      "kind": "custom",
+      "description": "Plain dated journal grammar; no raised plate. SVG marker is a preview stand-in for an SF Symbol.",
+      "html": "<article class=\"ds-log\"><div class=\"ds-marker\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"1\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M12 4v16\" stroke=\"currentColor\" stroke-width=\"1.5\"/></svg></div><div class=\"ds-entry\"><div class=\"ds-entry-top\"><strong>Visual comparison captured</strong><time>Time</time></div><p>Route \u00b7 baseline commit \u2192 candidate commit.<br>390 \u00d7 844 \u00b7 manual visual review.</p></div></article>",
+      "css": ".ds-log{font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:flex-start;gap:12px;padding:8px 0;color:CanvasText;background:transparent}.ds-marker{width:24px;position:relative;color:#59636B}.ds-marker:after{content:\"\";position:absolute;left:11.5px;top:36px;height:64px;width:1px;background:rgba(60,60,67,.29)}.ds-entry{flex:1}.ds-entry-top{display:flex;align-items:baseline;gap:8px;justify-content:space-between}.ds-entry strong{font-size:17px;font-weight:600}.ds-entry time{font-size:12px;color:#59636B;font-variant-numeric:tabular-nums}.ds-entry p{font-size:15px;color:#59636B;margin:6px 0 0}@media(max-width:360px){.ds-entry-top{display:block}}@media(prefers-color-scheme:dark){.ds-marker,.ds-entry time,.ds-entry p{color:#ACB6BD}.ds-marker:after{background:rgba(84,84,88,.6)}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Code-review inspection",
+    "overview": "Taktung uses the familiar discipline of a code review: readable state, precise identifiers and evidence that can be inspected. Neutral surfaces and system controls keep the interface calm; teal identifies an interaction or selection. The comparison reveal and dated Field Log provide its distinctive grammar.\n\nThis is a native SwiftUI system. San Francisco text styles, platform navigation and opaque content carry the visual language. The recognizable app icon appears in Settings; its colors do not become a decorative console theme. The selected site stays legible in navigation chrome while related evidence can occupy one compact column or two usable panes.",
+    "keyCharacteristics": [
+      "Adaptive light and dark content with a persistent System appearance option.",
+      "System typography with Dynamic Type; monospace reserved for identifiers, paths and logs.",
+      "Opaque tonal surfaces with quiet separators; platform glass belongs to navigation chrome.",
+      "Real before/after page evidence and a dated local journal."
+    ],
+    "rules": [
+      {
+        "name": "The Interaction Tint Rule",
+        "body": "Use teal for interactive tint, selected affordances and the comparison divider. Deployment state uses its own semantic text and symbol.",
+        "section": "colors"
+      },
+      {
+        "name": "The Identifier Rule",
+        "body": "Use Menlo only for commits, paths, deployment identifiers and build logs. Titles, task labels, narrative and journal prose use system text styles.",
+        "section": "typography"
+      },
+      {
+        "name": "The Reading Size Rule",
+        "body": "Keep native text styles and relative font scaling. At accessibility sizes, reflow metadata vertically and remove optional thumbnails or ornamental row symbols before reducing legibility.",
+        "section": "typography"
+      },
+      {
+        "name": "The Chrome Material Rule",
+        "body": "Let native navigation provide Liquid Glass. Content surfaces remain opaque, with tonal separation and semantic separators.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Centered Icon Structure Rule",
+        "body": "The body and base share x=512 on the 1024 px source canvas in every appearance. Body mirror pairs sum to 1024; the 652 px base spans x=186\u2013838. Preserve the unchanged directional pendulum and counterweight, with 10 px local clearance beyond the pendulum edge and counterweight disk. The complete mark remains directional because its pendulum is angled. [Centering proof](.asc/qa/icon-1.5.0-41/centering-proof.json) records the coordinates; appearance layers retain zero translation.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do use the paired appearance tokens and keep System, Light and Dark available in the persistent Settings picker.",
+      "Do use native navigation stacks, tabs, menus, sheets, segmented pickers and confirmation dialogs.",
+      "Do preserve 44 pt minimum controls, readable wrapping and Dynamic Type reflow.",
+      "Do pair status color with a word and SF Symbol.",
+      "Do show actual page pixels with baseline/candidate, commit, route and capture-time provenance.",
+      "Do keep Field Log entries dated, scoped and readable as a local record.",
+      "Do keep Taktung's app icon and Settings mark coherent, preserve artwork origins, and retain Codable's official artwork and appearance handling."
+    ],
+    "donts": [
+      "Don't apply glass, gradients or custom shadows to content plates.",
+      "Don't add a decorative console theme around identity artwork or copy Vercel's literal interface and colors.",
+      "Don't use monospace, uppercase eyebrows or decorative technical labels for ordinary UI prose.",
+      "Don't replace real comparison captures with decorative thumbnails, invented test scores or usage metrics.",
+      "Don't expose environment variable values in UI, journal entries or briefs.",
+      "Don't present model-only Search chrome when unavailable, except in isolated demo mode.",
+      "Don't make deployment actions appear completed before confirmed polling establishes the resulting state."
+    ]
+  }
+}

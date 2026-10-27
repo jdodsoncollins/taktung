@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "app": {
+    "bundle_id": "com.jcollins.takt",
+    "udid": "F2531D34-3CF9-48D4-B21A-FDDECE6EE5D6",
+    "output_dir": "./artifacts/app-store-1.3.0-36/capture-pilot"
+  },
+  "steps": [
+    {
+      "action": "screenshot",
+      "name": "prepared-native-state"
+    }
+  ]
+}

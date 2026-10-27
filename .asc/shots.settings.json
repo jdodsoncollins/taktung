@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "app": {
+    "bundle_id": "com.jcollins.takt",
+    "project": "Taktung.xcodeproj",
+    "scheme": "Taktung Demo",
+    "simulator_udid": "F2531D34-3CF9-48D4-B21A-FDDECE6EE5D6"
+  },
+  "paths": {
+    "plan": ".asc/screenshots.json",
+    "raw_dir": "./artifacts/app-store-1.3.0-36/public/screenshots",
+    "framed_dir": "./artifacts/app-store-1.3.0-36/release-images"
+  },
+  "pipeline": {
+    "frame_enabled": false,
+    "upload_enabled": false
+  },
+  "upload": {
+    "version_localization_id": "e827690b-b0da-4866-9e1f-8cc0f82e3218",
+    "device_type": "IPHONE_69",
+    "source_dir": "./artifacts/app-store-1.3.0-36/release-images"
+  }
+}

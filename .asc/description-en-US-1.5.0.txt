@@ -1,0 +1,19 @@
+Check your Vercel deployments from your iPhone or iPad. Taktung brings production status, build logs, visual comparison and a local Field Log into one place.
+
+- See your site's production state and recent deployments.
+- Compare real page captures with a reveal slider or side-by-side view. Save a baseline for the next deployment.
+- Investigate failed builds and read their logs. Check environment variable names and targets without exposing values.
+- Keep checks, comparisons and personal notes in a searchable local Field Log with text export.
+- Add small, medium or large Home Screen widgets. Choose all projects or one project; the large widget also shows recent deployment activity.
+- Ask Siri for deployment status, or use Shortcuts to inspect a project and check its loaded signals.
+- Review and confirm redeploy, promote and rollback actions.
+
+Connect with a Vercel personal access token, stored in the device Keychain. Taktung calls Vercel directly; history and saved baselines stay on this device, separated by account and team.
+
+Choose Light, Dark or System appearance. Layouts adapt to iPhone, expanded iPhone Duo and iPad.
+
+On compatible devices with Apple Intelligence available, site briefs can be summarized locally. Standard diagnosis remains available on every supported device.
+
+Requires iOS 27 or later and a Vercel account.
+
+Taktung is not officially affiliated with or endorsed by Vercel.

@@ -1,0 +1,3 @@
+Rendering speed improvements. iPhone Duo support. Bug fixes and UI updates.
+
+New small, medium and large Home Screen widgets show deployment status and recent activity, with an optional project filter.

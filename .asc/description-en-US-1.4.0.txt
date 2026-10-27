@@ -1,0 +1,15 @@
+Taktung (German: putting work on a beat) puts Vercel production on your phone. Pick a site to see its production state and recent deployments.
+
+Browse deployment history, read build logs, and diagnose failed builds. Check environment variable presence across Preview and Production by name and target; values are never shown.
+
+Compare real page captures before and after a deployment with a reveal slider or side-by-side view. Save a local baseline for a site and page path.
+
+Keep a field log of checks, comparisons, and personal notes. Search and filter the journal, read full entries, and export evidence. History and baselines stay on this device, separated by account and team.
+
+Redeploy, promote, or roll back after reviewing the source deployment, site, and target. Activity records READY only after Taktung polls Vercel. Promotion and rollback also check the current production target.
+
+Sign in with a Vercel personal access token. Credentials stay in the device Keychain, and the app calls api.vercel.com directly.
+
+Home and deployment details adapt to compact and expanded windows. The selected site remains visible in the header. Choose Light, Dark or System appearance in Settings. Heuristic diagnosis works without Apple Intelligence; supported devices can enhance the site brief locally.
+
+Taktung is not officially affiliated with or endorsed by Vercel.

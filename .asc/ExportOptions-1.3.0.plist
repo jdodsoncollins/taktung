@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.jcollins.takt</key>
+		<string>44449fbd-0be6-4e6e-90f1-565356e8cf63</string>
+	</dict>
+	<key>signingCertificate</key>
+	<string>5FF776B7595AF8203C69DDEFCDED301CBC840C45</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>stripSwiftSymbols</key>
+	<true/>
+	<key>teamID</key>
+	<string>3WN8R7X4QL</string>
+	<key>uploadSymbols</key>
+	<true/>
+</dict>
+</plist>

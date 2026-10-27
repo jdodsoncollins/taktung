@@ -1,0 +1,39 @@
+# Taktung 1.5.0 (42), submitted for review
+
+On 2026-10-12 the user authorized submitting 1.5.0 with all completed features. Build **42** is uploaded, VALID, attached and **WAITING_FOR_REVIEW**. Release type is **AFTER_APPROVAL**, so Apple approval releases this version automatically. Public 1.3.0 remains live until that happens. The centered selected icon C is preserved. Build 41's earlier withdrawal remains historical: submission `3b5833b8-9dd6-47c6-890f-0a16c456f9f7` was cancelled and verified COMPLETE.
+
+- App: Taktung, `6805738660`, platform IOS, bundle `com.jcollins.takt`.
+- Version: `64c6ef2d-6697-4c10-a686-e3f7f3c60a44`, 1.5.0.
+- Build: `bb3bee62-c445-492d-889e-42143ba81589`, 42.
+- Submission: `fe25dd5d-6a43-440d-9196-5363a79903ba`, submitted `2026-10-12T20:55:52.056Z`.
+- Monitor: `asc submit status --id fe25dd5d-6a43-440d-9196-5363a79903ba --output table`.
+
+Release execution used signed archive/export, build upload, dry-run/confirmed staging and dry-run/confirmed `asc review submit`. All completed widgets, Siri/Shortcuts, brief lifecycle and review-cadence changes, real comparison/history, UI, Duo support and icon improvements are included. No completed product feature is deferred. Hardware/model availability and confirmation requirements remain normal product behavior.
+
+Small, medium and large WidgetKit widgets show latest deployment status, bounded recent counts and freshness. Native long-press **Edit Widget → Project** defaults to All projects; each widget can independently filter one project. Appearance follows the system. Large adds five recent deployment records, reduced to three at accessibility text sizes. It shows current deployment state rather than historical state transitions or raw build logs. [Widget architecture and limits](widgets.md) describe the read-only request, Keychain scope and last-good cache.
+
+The regression run passed **95 tests**, zero failures/skips, including 14 widget tests. The result is `.asc/artifacts/test-widgets-large-42.xcresult`. After the review's view-only neutral-status contrast correction and static gallery fixture update, Debug Simulator and unsigned Release generic-device builds also succeeded. Genuine iPhone/iPad WidgetKit captures cover all three families, light/dark, accessibility5 and native project configuration. The full review and subsequent scored-fix verdict are in `.impeccable/review/widgets-large-finish-review.md` and `widgets-large-finish-verdict.md`. Canceled/Deleted/Unknown captions measured 9.81:1 in light and at least 6.85:1 in dark after correction.
+
+The later Siri/Shortcuts addition provides fresh spoken/composable deployment status, project inspection and site-health explanation alongside the three existing navigation actions. Project pickers use the current shared catalog; empty Project means All projects for status and the current site for inspection/health. Project evidence requires authentication and mutations remain in the confirmed app workflow. A typed queue fixes lost cold-launch handoffs. [Shortcut details](siri-and-shortcuts.md) record phrases, account scope and verification limits.
+
+Optional Apple Intelligence briefs now reuse identical scoped evidence briefly, coalesce duplicate generation, publish the heuristic without a global busy lock, and cancel/reject obsolete results. Cache is memory-only, six entries/five minutes, and clears on account/team/availability changes. [Brief lifecycle](apple-intelligence.md) records actual context budgeting and physical-hardware limits.
+
+The current full regression run passes **119 tests**, zero failures/skips: `.asc/artifacts/test-discovery-final-42.xcresult`. Debug Simulator and unsigned Release generic-device builds succeed; extracted metadata contains all six actions and the project entity/query. Native Shortcuts UI smoke checks cover discovery, named-project inspection/health, overlay dismissal, disconnected status and cold-launch Field Log routing. Build/test/metadata/UI receipts are in `.asc/qa/shortcuts/`. These checks do not establish spoken Siri recognition, physical model latency or connected live shortcut values.
+
+The listing package contains **25 browser-rendered RGB PNGs**: seven each for large/standard iPhone and iPad, plus two each for Duo inner/outer. Sheets 03 and 04 feature quick-glance widgets and large recent activity respectively. Sixteen unchanged feature sources remain representative; nine widget/Settings source placements were refreshed from genuine local 42 Demo captures. The flat numbered inspection-sheet format remains distinct from Codable's promotional imagery. All 25 remote assets are COMPLETE, with approved local checksums, dimensions and order verified. Source pixel hashes and export checksums are recorded in `artifacts/app-store-1.5.0-42/`. [Artwork ZIP](../artifacts/app-store-1.5.0-42/exports/Taktung-AppStore-1.5.0-42.zip) and [imagery notes](app-store-imagery.md) preserve the editable sources.
+
+The final archive/export uses Xcode 27.1 (27A9275), iOS 27 minimum and the existing distribution identity. Registered widget bundle `F2CQG573GZ` and App Store profile `LPA5JJJBTL` (`47348ef8-767c-41db-b1c0-56aefeb2c3b1`) join the existing host profile. Both exported signatures verify; both bundles have matching versions/builds, `get-task-allow=false` and Keychain group `3WN8R7X4QL.com.jcollins.takt`. The exported app contains all six App Intents and the extension's project entity. Demo mode is off. Apple processed the build as VALID and its centered icon was visually inspected.
+
+The final readiness gate has zero blocking issues, errors and warnings. Its one public-API App Privacy advisory is resolved with the currently published Data Not Collected label and unchanged collection behavior; authenticated unpublished-draft inspection is unavailable. The existing reviewer credential was preserved, verified against one bounded live GET, and kept out of repository receipts. Updated reviewer notes explain widgets, project configuration, Shortcuts and hardware availability. Physical background-refresh timing, live widget UI and physical model/voice performance remain unverified; these limits are not claims of tests performed.
+
+The user extended the requested release notes on 2026-10-12. Current copy, saved and verified in editable App Store Connect 1.5.0:
+
+**Rendering speed improvements. iPhone Duo support. Bug fixes and UI updates.**
+
+**New small, medium and large Home Screen widgets show deployment status and recent activity, with an optional project filter.**
+
+The description also includes widget sizes, project filtering, large-widget activity and system appearance. Canonical metadata lives in `metadata/`; [the discovery audit and approved implementation](app-store-discovery.md) record the original widget-only edit and the later approved positioning changes. Neither metadata edit uploads local build 42 or resumes review.
+
+The approved discoverability metadata is included in submitted 1.5.0, including the deployment-status descriptor, revised subtitle/description/keywords/promotion and Developer Tools category. Marketing/support URLs use the published product/help pages. [Discovery implementation](app-store-discovery.md) records validation and measurement-access limits. Native review prompts follow [the usage policy](review-prompts.md). The metadata-only step did not resume review; the later explicit user instruction authorized this submission.
+
+Release receipts are in `.asc/qa/release-1.5.0-42/`, including signed IPA validation, build processing, staging, image checksum proof, final readiness, review dry run/submission and verified review/release policy. The earlier regression evidence remains `.asc/artifacts/test-discovery-final-42.xcresult`: 119 passed, zero failures/skips/runtime warnings. Release-time source changes are signing configuration and the in-app privacy URL matching canonical metadata; the final signed compile succeeds.
