@@ -171,7 +171,7 @@ struct VercelConnection: Sendable {
     }
 }
 
-struct ActivityItem: Sendable, Identifiable, Hashable {
+struct ActivityItem: Sendable, Identifiable, Hashable, Codable {
     var id: String
     var kind: ActivityKind
     var title: String
@@ -180,6 +180,7 @@ struct ActivityItem: Sendable, Identifiable, Hashable {
     var createdAt: Date
     var projectId: ProjectID?
     var deploymentId: DeploymentID?
+    var projectName: String? = nil
 }
 
 /// Env var metadata only — never secret values.

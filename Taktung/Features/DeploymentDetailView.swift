@@ -3,8 +3,14 @@ import SwiftUI
 struct DeploymentDetailView: View {
     @Environment(AppSession.self) private var session
     var deployment: VercelDeploymentSummary
+    private var current: VercelDeploymentSummary { session.deploymentForDisplay(deployment) }
     @State private var pane: Pane = .diagnose
-    @State private var logs: [BuildLogLine] = []
+    @State private var visualComparison = VisualComparisonState()
+
+    init(deployment: VercelDeploymentSummary, initialPane: Pane = .diagnose) {
+        self.deployment = deployment
+        _pane = State(initialValue: initialPane)
+    }
 
     enum Pane: String, CaseIterable, Identifiable {
         case diagnose
@@ -23,81 +29,81 @@ struct DeploymentDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
+        AdaptiveWorkspace {
+            overview
+        } secondary: {
             VStack(alignment: .leading, spacing: Spacing.lg) {
-                Plate {
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        StateWord(
-                            label: deployment.state.rawValue,
-                            tone: deploymentStateTone(deployment.state)
-                        )
-                        Text(deploymentTitle(deployment))
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(Palette.text)
-                        Text(deploymentRefLine(deployment))
-                            .font(MonoFont.body(13))
-                            .foregroundStyle(Palette.textSecondary)
-                        if let provenance = deploymentProvenanceLine(deployment) {
-                            Text(provenance)
-                                .font(MonoFont.body(12))
-                                .foregroundStyle(Palette.textTertiary)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Spacing.sm) {
+                        ForEach(Pane.allCases) { item in
+                            FilterChip(label: item.label, selected: pane == item) { pane = item }
+                                .accessibilityIdentifier(id(for: item))
                         }
-                        DeploymentPreviewThumb(url: deployment.url, state: deployment.state, variant: .detail)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, Spacing.sm)
-                        if let page = absoluteDeploymentURL(deployment.url), let destination = URL(string: page) {
-                            Link("Open deployment", destination: destination)
-                                .font(MonoFont.body(13, weight: .semibold))
-                                .foregroundStyle(Palette.accent)
-                        }
-                    }
-                }
-                HStack(spacing: Spacing.sm) {
-                    ForEach(Pane.allCases) { item in
-                        FilterChip(label: item.label, selected: pane == item) { pane = item }
-                            .accessibilityIdentifier(id(for: item))
                     }
                 }
                 paneBody
-                VStack(spacing: Spacing.sm) {
-                    PrimaryButton(title: "Redeploy") {
-                        Task {
-                            await session.selectDeployment(deployment.id)
-                            session.requestMutation(mode: .redeploy)
-                        }
-                    }
+                NavigationLink {
+                    RuntimeLogsView(deployment: current)
+                } label: { Label("Runtime logs", systemImage: "waveform.path") }
+                NavigationLink {
+                    ProjectInspectionView(tool: .checks, deployment: current)
+                } label: { Label("Deployment checks", systemImage: "checkmark.shield") }
+                Menu {
+                    Button("Redeploy", systemImage: "arrow.clockwise") { requestMutation(.redeploy) }
                     .accessibilityIdentifier(AccessibilityIDs.redeployButton)
-                    PrimaryButton(title: "Promote to production", role: .ghost) {
-                        Task {
-                            await session.selectDeployment(deployment.id)
-                            session.requestMutation(mode: .promote)
-                        }
-                    }
-                    PrimaryButton(title: "Rollback production", role: .danger) {
-                        Task {
-                            await session.selectDeployment(deployment.id)
-                            session.requestMutation(mode: .rollback)
-                        }
-                    }
-                }
+                    Button("Promote to production", systemImage: "arrow.up.circle") { requestMutation(.promote) }
+                    Button("Rollback production", systemImage: "arrow.uturn.backward", role: .destructive) { requestMutation(.rollback) }
+                } label: {
+                    Label("Deployment actions", systemImage: "ellipsis.circle")
+                        .font(.subheadline.weight(.medium)).frame(maxWidth: .infinity, minHeight: 44)
+                }.accessibilityIdentifier("takt.detail.actions")
+                .disabled(session.isBusy || !session.deployments.contains { $0.id == deployment.id })
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Spacing.lg)
         }
-        .taktCanvas()
         .navigationTitle("Deployment")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await session.selectDeployment(deployment.id)
-            logs = await session.loadBuildLogs(for: deployment.id)
         }
     }
+
+    private var overview: some View {
+        Plate {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                StateWord(
+                    label: current.state.rawValue,
+                    tone: deploymentStateTone(current.state)
+                )
+                Text(deploymentTitle(current))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Palette.text)
+                Text(deploymentRefLine(current))
+                    .font(MonoFont.body(13))
+                    .foregroundStyle(Palette.textSecondary)
+                if let provenance = deploymentProvenanceLine(current) {
+                    Text(provenance)
+                        .font(MonoFont.body(12))
+                        .foregroundStyle(Palette.textTertiary)
+                }
+                if pane != .compare, current.state == .ready {
+                    DeploymentPreviewThumb(url: current.url, state: current.state, variant: .summary)
+                        .frame(maxWidth: .infinity).padding(.top, Spacing.sm)
+                }
+                if !DemoMode.isEnabled, let page = absoluteDeploymentURL(current.url), let destination = URL(string: page) {
+                    Link("Open deployment", destination: destination)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Palette.accent)
+                }
+            }
+        }
+    }
+
 
     @ViewBuilder
     private var paneBody: some View {
         switch pane {
         case .diagnose:
-            if let incident = session.incident {
+            if session.incidentDeploymentId == deployment.id, let incident = session.incident {
                 Plate {
                     VStack(alignment: .leading, spacing: Spacing.sm) {
                         Text(incident.headline)
@@ -111,53 +117,43 @@ struct DeploymentDetailView: View {
                             .foregroundStyle(Palette.textSecondary)
                     }
                 }
-            } else {
+            } else if isFailedState(current.state) {
                 PrimaryButton(title: "Run incident summary", role: .ghost) {
                     Task { await session.runIncidentSummary() }
                 }
-            }
-        case .compare:
-            Plate {
-                Text("Compare uses the last successful production deploy as baseline. No extra list N+1.")
-                    .font(.body)
-                    .foregroundStyle(Palette.textSecondary)
-            }
-        case .logs:
-            Plate {
-                VStack(alignment: .leading, spacing: 6) {
-                    if logs.isEmpty {
-                        Text("No build log lines loaded.")
-                            .font(MonoFont.body(12))
-                            .foregroundStyle(Palette.textSecondary)
-                    } else {
-                        ForEach(Array(logs.suffix(40).enumerated()), id: \.offset) { _, line in
-                            Text(line.text)
-                                .font(MonoFont.body(12))
-                                .foregroundStyle(Palette.textSecondary)
-                                .textSelection(.enabled)
-                        }
-                    }
-                }
-            }
-        case .errors:
-            Plate {
-                let failed = logs.filter {
-                    $0.text.localizedCaseInsensitiveContains("error")
-                        || $0.type == "stderr"
-                }
-                if failed.isEmpty {
-                    Text("No error-like lines in the loaded tail.")
+            } else {
+                Plate {
+                    Text("This deployment is \(current.state.rawValue). Select a failed deployment to diagnose its build.")
                         .font(.body)
                         .foregroundStyle(Palette.textSecondary)
-                } else {
-                    ForEach(Array(failed.prefix(20).enumerated()), id: \.offset) { _, line in
-                        Text(line.text)
-                            .font(MonoFont.body(12))
-                            .foregroundStyle(Palette.danger)
-                            .textSelection(.enabled)
-                    }
                 }
             }
+        case .compare:
+            VisualComparisonView(deployment: current, comparison: visualComparison)
+        case .logs, .errors:
+            logPane
+        }
+    }
+
+    private var logPane: some View {
+        Plate {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text("Search the latest build output, filter error-like lines and copy redacted evidence.")
+                    .font(.subheadline).foregroundStyle(Palette.textSecondary)
+                NavigationLink {
+                    BuildLogsView(deploymentID: deployment.id, initiallyErrorsOnly: pane == .errors)
+                } label: {
+                    Label(pane == .errors ? "Inspect error-like lines" : "Open build logs", systemImage: "text.alignleft")
+                        .font(.body.weight(.medium)).frame(minHeight: 44)
+                }.accessibilityIdentifier("takt.detail.openLogs")
+            }
+        }
+    }
+
+    private func requestMutation(_ mode: MutationMode) {
+        Task {
+            await session.selectDeployment(deployment.id)
+            session.requestMutation(mode: mode, expectedDeploymentID: deployment.id)
         }
     }
 

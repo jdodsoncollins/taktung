@@ -72,6 +72,19 @@ func summarizeFailedDeployment(
         )
     }
 
+    if failed.state == .canceled {
+        return IncidentSummary(
+            headline: "Deployment canceled: \(failed.name)",
+            likelyCause: "Vercel reports a cancellation. The loaded evidence does not establish why.",
+            evidence: ["Deployment \(failed.id) state=CANCELED"],
+            comparedWith: lastSuccess.map { $0.id },
+            suggestedAction: "Review the cancellation in Vercel before choosing another deployment or redeploying.",
+            confidence: .low,
+            commitSubject: commitSubject,
+            commitSha: commitSha
+        )
+    }
+
     var evidence: [String] = [
         "Failed deployment \(failed.id) state=\(failed.state.rawValue) target=\(failed.target?.rawValue ?? "unknown")"
     ]

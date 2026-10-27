@@ -97,7 +97,7 @@ private func deploy(
 ) -> VercelDeploymentSummary {
     VercelDeploymentSummary(
         id: id,
-        url: nil,
+        url: DemoPreview.pageURL,
         name: name,
         state: state,
         target: target,

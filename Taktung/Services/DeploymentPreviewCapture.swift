@@ -17,6 +17,7 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
     private var queue: [String] = []
     private var waiters: [String: [CheckedContinuation<UIImage?, Never>]] = [:]
     private var current: String?
+    private var currentNavigation: WKNavigation?
     private var timeoutTask: Task<Void, Never>?
 
     func cachedImage(for pageURL: String) -> UIImage? {
@@ -69,7 +70,11 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
             finish(nil)
             return
         }
-        webView?.load(URLRequest(url: url))
+        if DemoMode.isEnabled, next == DemoPreview.pageURL {
+            currentNavigation = webView?.loadHTMLString(DemoPreview.html, baseURL: url)
+        } else {
+            currentNavigation = webView?.load(URLRequest(url: url))
+        }
         timeoutTask?.cancel()
         timeoutTask = Task { [weak self] in
             guard let self else { return }
@@ -83,6 +88,8 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
         guard let page = current else { return }
         timeoutTask?.cancel()
         timeoutTask = nil
+        currentNavigation = nil
+        webView?.stopLoading()
         current = nil
         if let image {
             images[page] = image
@@ -95,7 +102,7 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        guard current != nil else { return }
+        guard let page = current, navigation === currentNavigation else { return }
         let script = """
         JSON.stringify({
           h: Math.max(document.body ? document.body.scrollHeight : 0, document.documentElement ? document.documentElement.scrollHeight : 0, 640),
@@ -106,16 +113,19 @@ final class PreviewCaptureCenter: NSObject, WKNavigationDelegate {
         """
         webView.evaluateJavaScript(script) { [weak self] value, _ in
             Task { @MainActor in
+                guard self?.current == page, navigation === self?.currentNavigation else { return }
                 self?.handleReady(value, webView: webView)
             }
         }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        guard navigation === currentNavigation else { return }
         finish(nil)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        guard navigation === currentNavigation else { return }
         finish(nil)
     }
 

@@ -1,0 +1,41 @@
+{
+  "configurations": [
+    {
+      "id": "E47058D2-15A7-4564-9244-5AB0351312AC",
+      "name": "Local StoreKit",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "storeKitConfigurationFileReference": {
+      "identifier": "TaktungTests/TipJar.storekit"
+    },
+    "targetForVariableExpansion": {
+      "containerPath": "container:Taktung.xcodeproj",
+      "identifier": "93E01CDD1E5F42CE99C98B36",
+      "name": "Taktung"
+    }
+  },
+  "testTargets": [
+    {
+      "parallelizable": false,
+      "selectedTests": [
+        "TipStoreKitTests"
+      ],
+      "target": {
+        "containerPath": "container:Taktung.xcodeproj",
+        "identifier": "3D74F4B37D4540E7B3D28BFA",
+        "name": "TaktungTests"
+      }
+    },
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:Taktung.xcodeproj",
+        "identifier": "D81800000000000000000001",
+        "name": "TaktungUITests"
+      }
+    }
+  ],
+  "version": 1
+}

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<!-- Original selected C. Structural body and base share x=512. Body mirror pairs sum to 1024; only the intentional pendulum clearance interrupts the right leg. -->
+<path fill="#FFFFFF" d="M229 742 L387 175 Q400 130 442 130 H582 Q624 130 637 175 L683.898094 343.298857 A68 68 0 0 0 688.226923 406.864628 L653.921636 471.27959 L576 194 H448 L294 742 Z"/><path fill="#FFFFFF" d="M721.921285 479.749169 L795 742 H730 L678.96742 560.403548 Z"/><rect x="186" y="742" width="652" height="92" rx="22" fill="#FFFFFF"/>
+</svg>

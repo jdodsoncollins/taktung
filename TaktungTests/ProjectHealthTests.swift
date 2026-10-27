@@ -3,6 +3,15 @@ import Testing
 @testable import Taktung
 
 struct ProjectHealthTests {
+    @Test func canceledDiagnosisDoesNotInventABuildError() {
+        let canceled = sampleDeploy(id: "dpl_canceled", state: .canceled, target: .production)
+        let result = summarizeFailedDeployment(failed: canceled, lastSuccess: nil,
+                                               logLines: [], missingProductionEnvKeys: ["OPTIONAL_KEY"])
+        #expect(result.headline == "Deployment canceled: example")
+        #expect(result.confidence == .low)
+        #expect(result.likelyCause?.contains("does not establish why") == true)
+        #expect(!result.suggestedAction.contains("fix the root error"))
+    }
     @Test func mapsUnknownState() {
         #expect(DeploymentState.map("READY") == .ready)
         #expect(DeploymentState.map("bogus") == .unknown)

@@ -40,4 +40,12 @@ struct DemoModeTests {
             )
         }
     }
+
+    @Test func failedFixtureHasRealDiagnosticEvidence() async throws {
+        let failed = buildDemoDeployments(projectId: DemoIDs.portfolio).first { $0.state == .error }!
+        let logs = try await DemoAPIClient().getBuildLogLines(id: failed.id, teamId: DemoIDs.team, limit: 200)
+        let summary = summarizeFailedDeployment(failed: failed, lastSuccess: nil, logLines: logs)
+        #expect(summary.likelyCause == "TypeScript / compile error")
+        #expect(summary.confidence == .high)
+    }
 }

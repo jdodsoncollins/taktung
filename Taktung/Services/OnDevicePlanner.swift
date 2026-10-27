@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 #if canImport(FoundationModels)
 import FoundationModels
@@ -24,16 +25,27 @@ enum OnDevicePlanner {
     /// unavailable or the text looks like a secret. Heuristic briefs still run.
     static func brief(context: String) async -> String? {
         #if canImport(FoundationModels)
-        guard isAvailable, #available(iOS 26.0, *) else { return nil }
-        if containsSecretLike(context) { return nil }
+        guard isAvailable, let prompt = BriefModelPolicy.prompt(context) else { return nil }
+        let started = ContinuousClock.now
         do {
-            let session = LanguageModelSession(
-                instructions: "You write one sentence for a Vercel operator. Do not invent environment values, tokens, or hostnames that were not provided."
-            )
-            let response = try await session.respond(to: context)
-            let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty, !containsSecretLike(text) else { return nil }
-            return text
+            let model = SystemLanguageModel.default
+            // A fresh session prevents repeated checks from accumulating history.
+            let inputTokens = try await model.tokenCount(for: prompt)
+            let instructionTokens = try await model.tokenCount(for: Instructions(BriefModelPolicy.instructions))
+            guard inputTokens + instructionTokens + BriefModelPolicy.responseTokens + 128 < model.contextSize,
+                  !Task.isCancelled else { return nil }
+            let session = LanguageModelSession(model: model, instructions: BriefModelPolicy.instructions)
+            let response = try await session.respond(to: prompt, options: GenerationOptions(
+                samplingMode: .greedy, maximumResponseTokens: BriefModelPolicy.responseTokens))
+            guard !Task.isCancelled else { return nil }
+            let accepted = BriefModelPolicy.accept(response.content)
+            #if DEBUG
+            let duration = started.duration(to: .now).components
+            let milliseconds = duration.seconds * 1_000 + duration.attoseconds / 1_000_000_000_000_000
+            Logger(subsystem: AppConfig.bundleID, category: "OnDeviceBrief").info(
+                "Brief input=\(inputTokens + instructionTokens) output=\(response.usage.output.totalTokenCount) context=\(model.contextSize) ms=\(milliseconds) accepted=\(accepted != nil)")
+            #endif
+            return accepted
         } catch {
             return nil
         }

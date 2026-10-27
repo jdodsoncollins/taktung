@@ -30,8 +30,8 @@ struct SitePickerView: View {
         .navigationTitle("Sites")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }
+            ToolbarItem(placement: .topBarPinnedTrailing) {
+                Button("Done", systemImage: "checkmark") { dismiss() }
             }
         }
         .accessibilityIdentifier(AccessibilityIDs.sitePicker)

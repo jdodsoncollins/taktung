@@ -99,9 +99,7 @@ func synthesizeOpsNarrative(_ ctx: BoundedOpsContext) -> OpsNarrative {
     var issues: [String] = []
     if ctx.needsAttention {
         used.append(contentsOf: ["needsAttention", "attentionReason", "productionState"])
-        issues.append(
-            "Needs attention (\(ctx.attentionReason ?? "unknown")). Production state: \(ctx.productionState ?? "unknown")."
-        )
+        issues.append("Production needs attention. State: \(ctx.productionState ?? "unknown").")
         confidence = .medium
     }
     if ctx.incidentCause != nil || ctx.incidentHeadline != nil {
@@ -124,10 +122,10 @@ func synthesizeOpsNarrative(_ ctx: BoundedOpsContext) -> OpsNarrative {
     if ctx.domainCritical > 0 {
         used.append(contentsOf: ["domainCritical", "domainSummary"])
         issues.append(
-            "Domains: \(ctx.domainCritical) critical. \(ctx.domainSummary ?? "")"
+            "Domain ownership: \(ctx.domainCritical) need verification. \(ctx.domainSummary ?? "")"
                 .trimmingCharacters(in: .whitespaces)
         )
-        next.append("Fix DNS / verification in Vercel Domains")
+        next.append("Review ownership verification in Vercel Domains")
     }
     if ctx.compareRisk == "high" || ctx.compareRisk == "medium" {
         used.append(contentsOf: ["compareRisk", "compareSummary"])
@@ -144,17 +142,17 @@ func synthesizeOpsNarrative(_ ctx: BoundedOpsContext) -> OpsNarrative {
                 .trimmingCharacters(in: .whitespaces)
         )
         confidence = .medium
-        next.append("Inspect top error paths from Runtime 5xx report")
+        next.append("Inspect the sampled deployment's runtime logs")
     }
     if ctx.lastMutatorNote != nil { used.append("lastMutatorNote") }
 
     if issues.isEmpty {
         return OpsNarrative(
             headline: "\(name) looks stable",
-            body: "No critical signals in the loaded snapshot. Production state: \(ctx.productionState ?? "unknown"). Load Domain, Env drift, Runtime, or Diagnose for a deeper brief.",
+            body: "No critical signals in the loaded snapshot. Production state: \(ctx.productionState ?? "unknown"). Check environment drift or diagnose a failed deployment for more detail.",
             nextSteps: [
                 "Refresh projects if data may be stale",
-                "Run Runtime 5xx for production error window",
+                "Check environment drift for missing Production variable names",
             ],
             confidence: .medium,
             usedFields: used,
@@ -162,7 +160,9 @@ func synthesizeOpsNarrative(_ ctx: BoundedOpsContext) -> OpsNarrative {
         )
     }
     if next.isEmpty {
-        next.append("Refresh deployments and re-run Diagnose on the failing deploy")
+        next.append(ctx.productionState == "CANCELED"
+                    ? "Review the cancellation in Vercel before choosing another deployment"
+                    : "Refresh deployments and re-run Diagnose on the failing deploy")
     }
     return OpsNarrative(
         headline: "Brief for \(name)",
@@ -185,6 +185,6 @@ func formatOpsNarrative(_ n: OpsNarrative) -> String {
 func containsSecretLike(_ text: String) -> Bool {
     let lowered = text.lowercased()
     if lowered.contains("-----begin") { return true }
-    let patterns = ["sk_live", "sk-ant-", "ghp_", "vercel_token=", "aws_secret"]
+    let patterns = ["sk_live", "sk-ant-", "ghp_", "vcp_", "vercel_token=", "aws_secret"]
     return patterns.contains { lowered.contains($0) }
 }

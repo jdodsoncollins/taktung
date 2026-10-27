@@ -17,8 +17,8 @@
       "name": "Light",
       "layers": [
         {
-          "image-name": "0_light.png",
-          "name": "Light",
+          "image-name": "light-counterweight.svg",
+          "name": "Counterweight",
           "glass": false,
           "hidden-specializations": [
             {
@@ -32,7 +32,76 @@
           ],
           "position": {
             "scale": 1.0,
-            "translation-in-points": [0, 0]
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name": "light-frame.svg",
+          "name": "Frame",
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "appearance": "dark",
+              "value": true
+            },
+            {
+              "appearance": "tinted",
+              "value": true
+            }
+          ],
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name": "light-pendulum.svg",
+          "name": "Pendulum",
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "appearance": "dark",
+              "value": true
+            },
+            {
+              "appearance": "tinted",
+              "value": true
+            }
+          ],
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name": "light-background.svg",
+          "name": "Background",
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "appearance": "dark",
+              "value": true
+            },
+            {
+              "appearance": "tinted",
+              "value": true
+            }
+          ],
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
           }
         }
       ],
@@ -52,11 +121,13 @@
       "name": "Dark",
       "layers": [
         {
-          "image-name": "1_dark.png",
-          "name": "Dark",
+          "image-name": "dark-counterweight.svg",
+          "name": "Counterweight",
           "glass": false,
-          "hidden": true,
           "hidden-specializations": [
+            {
+              "value": true
+            },
             {
               "appearance": "dark",
               "value": false
@@ -68,7 +139,85 @@
           ],
           "position": {
             "scale": 1.0,
-            "translation-in-points": [0, 0]
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name": "dark-frame.svg",
+          "name": "Frame",
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "value": true
+            },
+            {
+              "appearance": "dark",
+              "value": false
+            },
+            {
+              "appearance": "tinted",
+              "value": true
+            }
+          ],
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name": "dark-pendulum.svg",
+          "name": "Pendulum",
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "value": true
+            },
+            {
+              "appearance": "dark",
+              "value": false
+            },
+            {
+              "appearance": "tinted",
+              "value": true
+            }
+          ],
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name": "dark-background.svg",
+          "name": "Background",
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "value": true
+            },
+            {
+              "appearance": "dark",
+              "value": false
+            },
+            {
+              "appearance": "tinted",
+              "value": true
+            }
+          ],
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
           }
         }
       ],
@@ -88,30 +237,89 @@
       "name": "Tinted",
       "layers": [
         {
-          "image-name": "2_mark.svg",
-          "name": "Mark",
-          "glass": true,
-          "hidden": true,
+          "image-name": "tinted-counterweight.svg",
+          "name": "Counterweight",
+          "glass": false,
           "hidden-specializations": [
+            {
+              "value": true
+            },
             {
               "appearance": "tinted",
               "value": false
             }
           ],
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
           "fill-specializations": [
             {
               "appearance": "tinted",
               "value": "automatic"
             }
+          ]
+        },
+        {
+          "image-name": "tinted-frame.svg",
+          "name": "Frame",
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "value": true
+            },
+            {
+              "appearance": "tinted",
+              "value": false
+            }
           ],
           "position": {
             "scale": 1.0,
-            "translation-in-points": [0, 0]
-          }
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "appearance": "tinted",
+              "value": "automatic"
+            }
+          ]
+        },
+        {
+          "image-name": "tinted-pendulum.svg",
+          "name": "Pendulum",
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "value": true
+            },
+            {
+              "appearance": "tinted",
+              "value": false
+            }
+          ],
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          },
+          "fill-specializations": [
+            {
+              "appearance": "tinted",
+              "value": "automatic"
+            }
+          ]
         }
       ],
-      "specular": true,
-      "blur-material": 0.22,
+      "specular": false,
+      "blur-material": 0,
       "lighting": "combined",
       "shadow": {
         "kind": "none",

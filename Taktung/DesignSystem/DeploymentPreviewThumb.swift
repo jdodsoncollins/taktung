@@ -8,12 +8,13 @@ struct DeploymentPreviewThumb: View {
     @State private var image: UIImage?
 
     enum Variant {
-        case banner, chip, detail
+        case banner, chip, detail, summary
 
         var size: CGSize {
             switch self {
             case .banner, .detail: CGSize(width: 120, height: 228)
             case .chip: CGSize(width: 30, height: 48)
+            case .summary: CGSize(width: 76, height: 112)
             }
         }
 
@@ -32,7 +33,6 @@ struct DeploymentPreviewThumb: View {
                     .scaledToFill()
                     .frame(width: size.width, height: size.height, alignment: .top)
                     .clipped()
-                Color.black.opacity(0.12)
             }
         }
         .frame(width: size.width, height: size.height)

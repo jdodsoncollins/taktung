@@ -6,6 +6,21 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXCopyFilesBuildPhase section */
+		D730000000000000000000006 /* Embed App Extensions */ = { isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (D730000000000000000000003, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXBuildFile section */
+		D73000000000000000000001E /* AppConfig.swift in Sources */ = { isa = PBXBuildFile; fileRef = D730000000000000000000014; };
+		D73000000000000000000001F /* Domain/Models.swift in Sources */ = { isa = PBXBuildFile; fileRef = D730000000000000000000015; };
+		D730000000000000000000020 /* Domain/WidgetDeploymentSnapshot.swift in Sources */ = { isa = PBXBuildFile; fileRef = D730000000000000000000016; };
+		D730000000000000000000021 /* Services/WidgetSnapshotStore.swift in Sources */ = { isa = PBXBuildFile; fileRef = D730000000000000000000017; };
+		D730000000000000000000022 /* Services/WidgetDeploymentService.swift in Sources */ = { isa = PBXBuildFile; fileRef = D730000000000000000000018; };
+		D730000000000000000000003 /* TaktungWidgets.appex in Embed App Extensions */ = { isa = PBXBuildFile; fileRef = D730000000000000000000002; settings = { ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		D730000000000000000000023 /* SystemProjectCatalog.swift in Sources */ = { isa = PBXBuildFile; fileRef = D730000000000000000000019; };
+		D8180000000000000000000D = { isa = PBXBuildFile; fileRef = D8180000000000000000000C; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F1A8B2C3D4E5F60718293A4B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -14,6 +29,8 @@
 			remoteGlobalIDString = 93E01CDD1E5F42CE99C98B36;
 			remoteInfo = Taktung;
 		};
+		D730000000000000000000004 = { isa = PBXContainerItemProxy; containerPortal = 76B103DE9E62424AA84073FE; proxyType = 1; remoteGlobalIDString = D730000000000000000000001; remoteInfo = TaktungWidgets; };
+		D8180000000000000000000B = { isa = PBXContainerItemProxy; containerPortal = 76B103DE9E62424AA84073FE; proxyType = 1; remoteGlobalIDString = 93E01CDD1E5F42CE99C98B36; remoteInfo = Taktung; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -21,9 +38,11 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Taktung.entitlements,
 			);
 			target = 93E01CDD1E5F42CE99C98B36 /* Taktung */;
 		};
+		D730000000000000000000007 = { isa = PBXFileSystemSynchronizedBuildFileExceptionSet; membershipExceptions = (Info.plist, TaktungWidgets.entitlements, ); target = D730000000000000000000001; };
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -40,6 +59,8 @@
 			path = TaktungTests;
 			sourceTree = "<group>";
 		};
+		D730000000000000000000008 /* TaktungWidgets */ = { isa = PBXFileSystemSynchronizedRootGroup; exceptions = (D730000000000000000000007, ); path = TaktungWidgets; sourceTree = "<group>"; };
+		D81800000000000000000003 = { isa = PBXFileSystemSynchronizedRootGroup; path = TaktungUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +78,15 @@
 			path = TaktungTests.xctest;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		D730000000000000000000014 /* AppConfig.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Taktung/AppConfig.swift"; sourceTree = SOURCE_ROOT; };
+		D730000000000000000000015 /* Domain/Models.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Taktung/Domain/Models.swift"; sourceTree = SOURCE_ROOT; };
+		D730000000000000000000016 /* Domain/WidgetDeploymentSnapshot.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Taktung/Domain/WidgetDeploymentSnapshot.swift"; sourceTree = SOURCE_ROOT; };
+		D730000000000000000000017 /* Services/WidgetSnapshotStore.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Taktung/Services/WidgetSnapshotStore.swift"; sourceTree = SOURCE_ROOT; };
+		D730000000000000000000018 /* Services/WidgetDeploymentService.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Taktung/Services/WidgetDeploymentService.swift"; sourceTree = SOURCE_ROOT; };
+		D730000000000000000000002 /* TaktungWidgets.appex */ = { isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TaktungWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D730000000000000000000019 /* SystemProjectCatalog.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Taktung/Domain/SystemProjectCatalog.swift"; sourceTree = SOURCE_ROOT; };
+		D81800000000000000000002 = { isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TaktungUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D8180000000000000000000C = { isa = PBXFileReference; lastKnownFileType = text; path = TaktungTests/TipJar.storekit; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +104,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D73000000000000000000000B = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		D81800000000000000000005 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -82,6 +114,9 @@
 			children = (
 				334DEB1AD6E04BB2B818CB27 /* Taktung */,
 				60F8230A2E754F96854532AE /* TaktungTests */,
+				D81800000000000000000003 /* TaktungUITests */,
+				D730000000000000000000008 /* TaktungWidgets */,
+				D730000000000000000000009 /* Widget shared sources */,
 				C9717343ADED439D8AA55CB0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,11 +125,14 @@
 			isa = PBXGroup;
 			children = (
 				1EB49D1768884559BBB02DD4 /* Taktung.app */,
+				D730000000000000000000002 /* TaktungWidgets.appex */,
 				1E86CD6A3C4B48D1A2FF3E2F /* TaktungTests.xctest */,
+				D81800000000000000000002 /* TaktungUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
+		D730000000000000000000009 /* Widget shared sources */ = { isa = PBXGroup; children = (D730000000000000000000014, D730000000000000000000015, D730000000000000000000016, D730000000000000000000017, D730000000000000000000018, D730000000000000000000019, ); name = "Widget shared sources"; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -105,10 +143,12 @@
 				D2D9105A75CF45E395F700CD /* Sources */,
 				4DFB27CC782B4950AA0C845E /* Frameworks */,
 				A1C46DB11A3D40B19E38B009 /* Resources */,
+				D730000000000000000000006 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D730000000000000000000005,
 			);
 			fileSystemSynchronizedGroups = (
 				334DEB1AD6E04BB2B818CB27 /* Taktung */,
@@ -124,6 +164,7 @@
 			buildPhases = (
 				F2880A6FCA9249AE8C70EEB1 /* Sources */,
 				6A2F6C7323704D068E816BDB /* Frameworks */,
+				D8180000000000000000000E /* Test Resources */,
 			);
 			buildRules = (
 			);
@@ -138,6 +179,8 @@
 			productReference = 1E86CD6A3C4B48D1A2FF3E2F /* TaktungTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		D730000000000000000000001 /* TaktungWidgets */ = { isa = PBXNativeTarget; buildConfigurationList = D73000000000000000000000D; buildPhases = (D73000000000000000000000A, D73000000000000000000000B, D73000000000000000000000C, ); buildRules = (); dependencies = (); fileSystemSynchronizedGroups = (D730000000000000000000008, ); name = TaktungWidgets; productName = TaktungWidgets; productReference = D730000000000000000000002; productType = "com.apple.product-type.app-extension"; };
+		D81800000000000000000001 = { isa = PBXNativeTarget; buildConfigurationList = D81800000000000000000007; buildPhases = (D81800000000000000000004, D81800000000000000000005, D81800000000000000000006, ); buildRules = (); dependencies = (D8180000000000000000000A, ); fileSystemSynchronizedGroups = (D81800000000000000000003, ); name = TaktungUITests; productName = TaktungUITests; productReference = D81800000000000000000002; productType = "com.apple.product-type.bundle.ui-testing"; };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -145,8 +188,8 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2700;
-				LastUpgradeCheck = 2700;
+				LastSwiftUpdateCheck = 2710;
+				LastUpgradeCheck = 2710;
 				TargetAttributes = {
 					93E01CDD1E5F42CE99C98B36 = {
 						CreatedOnToolsVersion = 27.0;
@@ -171,8 +214,10 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				D730000000000000000000001 /* TaktungWidgets */,
 				93E01CDD1E5F42CE99C98B36 /* Taktung */,
 				3D74F4B37D4540E7B3D28BFA /* TaktungTests */,
+				D81800000000000000000001 /* TaktungUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -185,6 +230,9 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D73000000000000000000000C = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		D81800000000000000000006 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (D8180000000000000000000D, ); runOnlyForDeploymentPostprocessing = 0; };
+		D8180000000000000000000E = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -202,6 +250,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D73000000000000000000000A = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (D73000000000000000000001E, D73000000000000000000001F, D730000000000000000000020, D730000000000000000000021, D730000000000000000000022, D730000000000000000000023, ); runOnlyForDeploymentPostprocessing = 0; };
+		D81800000000000000000004 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -210,6 +260,8 @@
 			target = 93E01CDD1E5F42CE99C98B36 /* Taktung */;
 			targetProxy = F1A8B2C3D4E5F60718293A4B /* PBXContainerItemProxy */;
 		};
+		D730000000000000000000005 = { isa = PBXTargetDependency; target = D730000000000000000000001; targetProxy = D730000000000000000000004; };
+		D8180000000000000000000A = { isa = PBXTargetDependency; target = 93E01CDD1E5F42CE99C98B36; targetProxy = D8180000000000000000000B; };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -261,115 +313,213 @@
 			name = Release;
 		};
 		A1A8B2C3D4E5F60718293A4B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
-				DEVELOPMENT_TEAM = 3WN8R7X4QL;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Taktung/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Taktung;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jcollins.takt;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
+	buildSettings = {
+		"ASSETCATALOG_COMPILER_APPICON_NAME" = AppIcon;
+		"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = AccentColor;
+		"CODE_SIGN_ENTITLEMENTS" = "Taktung/Taktung.entitlements";
+		"CODE_SIGN_STYLE" = Automatic;
+		"CURRENT_PROJECT_VERSION" = 46;
+		"DEVELOPMENT_TEAM" = 3WN8R7X4QL;
+		"ENABLE_PREVIEWS" = YES;
+		"GENERATE_INFOPLIST_FILE" = NO;
+		"INFOPLIST_FILE" = "Taktung/Info.plist";
+		"INFOPLIST_KEY_CFBundleDisplayName" = Taktung;
+		"INFOPLIST_KEY_LSApplicationCategoryType" = "public.app-category.developer-tools";
+		"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = YES;
+		"INFOPLIST_KEY_UILaunchScreen_Generation" = YES;
+		"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+		"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone" = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+		"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+		"LD_RUNPATH_SEARCH_PATHS" = (
+			"$(inherited)",
+			"@executable_path/Frameworks",
+		);
+		"MARKETING_VERSION" = "1.8.0";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.jcollins.takt";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+		"SUPPORTS_MACCATALYST" = NO;
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_EMIT_LOC_STRINGS" = YES;
+		"SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY" = YES;
+		"SWIFT_VERSION" = "6.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+	};
+	isa = XCBuildConfiguration;
+	name = Debug;
+};
 		B1A8B2C3D4E5F60718293A4B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
-				DEVELOPMENT_TEAM = 3WN8R7X4QL;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Taktung/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Taktung;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jcollins.takt;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
+	buildSettings = {
+		"ASSETCATALOG_COMPILER_APPICON_NAME" = AppIcon;
+		"ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME" = AccentColor;
+		"CODE_SIGN_ENTITLEMENTS" = "Taktung/Taktung.entitlements";
+		"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
+		"CODE_SIGN_STYLE" = Manual;
+		"CURRENT_PROJECT_VERSION" = 46;
+		"DEVELOPMENT_TEAM" = 3WN8R7X4QL;
+		"ENABLE_PREVIEWS" = YES;
+		"GENERATE_INFOPLIST_FILE" = NO;
+		"INFOPLIST_FILE" = "Taktung/Info.plist";
+		"INFOPLIST_KEY_CFBundleDisplayName" = Taktung;
+		"INFOPLIST_KEY_LSApplicationCategoryType" = "public.app-category.developer-tools";
+		"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = YES;
+		"INFOPLIST_KEY_UILaunchScreen_Generation" = YES;
+		"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad" = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+		"INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone" = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+		"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+		"LD_RUNPATH_SEARCH_PATHS" = (
+			"$(inherited)",
+			"@executable_path/Frameworks",
+		);
+		"MARKETING_VERSION" = "1.8.0";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.jcollins.takt";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "25a303d6-000b-4207-ba34-c4d31b674c53";
+		"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+		"SUPPORTS_MACCATALYST" = NO;
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_EMIT_LOC_STRINGS" = YES;
+		"SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY" = YES;
+		"SWIFT_VERSION" = "6.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+	};
+	isa = XCBuildConfiguration;
+	name = Release;
+};
 		C1A8B2C3D4E5F60718293A4B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
-				DEVELOPMENT_TEAM = 3WN8R7X4QL;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jcollins.takt.tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Taktung.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Taktung";
-			};
-			name = Debug;
-		};
+	buildSettings = {
+		"BUNDLE_LOADER" = "$(TEST_HOST)";
+		"CODE_SIGN_STYLE" = Automatic;
+		"CURRENT_PROJECT_VERSION" = 46;
+		"DEVELOPMENT_TEAM" = 3WN8R7X4QL;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+		"MARKETING_VERSION" = "1.8.0";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.jcollins.takt.tests";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_EMIT_LOC_STRINGS" = NO;
+		"SWIFT_VERSION" = "6.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+		"TEST_HOST" = "$(BUILT_PRODUCTS_DIR)/Taktung.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Taktung";
+	};
+	isa = XCBuildConfiguration;
+	name = Debug;
+};
 		D1A8B2C3D4E5F60718293A4B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
-				DEVELOPMENT_TEAM = 3WN8R7X4QL;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jcollins.takt.tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Taktung.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Taktung";
-			};
-			name = Release;
-		};
+	buildSettings = {
+		"BUNDLE_LOADER" = "$(TEST_HOST)";
+		"CODE_SIGN_STYLE" = Automatic;
+		"CURRENT_PROJECT_VERSION" = 46;
+		"DEVELOPMENT_TEAM" = 3WN8R7X4QL;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+		"MARKETING_VERSION" = "1.8.0";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.jcollins.takt.tests";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_EMIT_LOC_STRINGS" = NO;
+		"SWIFT_VERSION" = "6.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+		"TEST_HOST" = "$(BUILT_PRODUCTS_DIR)/Taktung.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Taktung";
+	};
+	isa = XCBuildConfiguration;
+	name = Release;
+};
+		D73000000000000000000000E /* Debug */ = {
+	buildSettings = {
+		"APPLICATION_EXTENSION_API_ONLY" = YES;
+		"CODE_SIGN_ENTITLEMENTS" = "TaktungWidgets/TaktungWidgets.entitlements";
+		"CODE_SIGN_STYLE" = Automatic;
+		"CURRENT_PROJECT_VERSION" = 46;
+		"DEVELOPMENT_TEAM" = 3WN8R7X4QL;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"INFOPLIST_FILE" = "TaktungWidgets/Info.plist";
+		"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+		"LD_RUNPATH_SEARCH_PATHS" = (
+			"$(inherited)",
+			"@executable_path/Frameworks",
+			"@executable_path/../../Frameworks",
+		);
+		"MARKETING_VERSION" = "1.8.0";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.jcollins.takt.widgets";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"SKIP_INSTALL" = YES;
+		"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+		"SUPPORTS_MACCATALYST" = NO;
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_EMIT_LOC_STRINGS" = YES;
+		"SWIFT_VERSION" = "6.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+	};
+	isa = XCBuildConfiguration;
+	name = Debug;
+};
+		D73000000000000000000000F /* Release */ = {
+	buildSettings = {
+		"APPLICATION_EXTENSION_API_ONLY" = YES;
+		"CODE_SIGN_ENTITLEMENTS" = "TaktungWidgets/TaktungWidgets.entitlements";
+		"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
+		"CODE_SIGN_STYLE" = Manual;
+		"CURRENT_PROJECT_VERSION" = 46;
+		"DEVELOPMENT_TEAM" = 3WN8R7X4QL;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"INFOPLIST_FILE" = "TaktungWidgets/Info.plist";
+		"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+		"LD_RUNPATH_SEARCH_PATHS" = (
+			"$(inherited)",
+			"@executable_path/Frameworks",
+			"@executable_path/../../Frameworks",
+		);
+		"MARKETING_VERSION" = "1.8.0";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.jcollins.takt.widgets";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "eaf55bc0-7859-4f08-b95c-47f0d4cc8b72";
+		"SKIP_INSTALL" = YES;
+		"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+		"SUPPORTS_MACCATALYST" = NO;
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_EMIT_LOC_STRINGS" = YES;
+		"SWIFT_VERSION" = "6.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+	};
+	isa = XCBuildConfiguration;
+	name = Release;
+};
+		D81800000000000000000008 = {
+	buildSettings = {
+		"CODE_SIGN_STYLE" = Automatic;
+		"CURRENT_PROJECT_VERSION" = 46;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+		"MARKETING_VERSION" = "1.8.0";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.jcollins.takt.uitests";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_VERSION" = "6.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+		"TEST_TARGET_NAME" = Taktung;
+	};
+	isa = XCBuildConfiguration;
+	name = Debug;
+};
+		D81800000000000000000009 = {
+	buildSettings = {
+		"CODE_SIGN_STYLE" = Automatic;
+		"CURRENT_PROJECT_VERSION" = 46;
+		"GENERATE_INFOPLIST_FILE" = YES;
+		"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+		"MARKETING_VERSION" = "1.8.0";
+		"PRODUCT_BUNDLE_IDENTIFIER" = "com.jcollins.takt.uitests";
+		"PRODUCT_NAME" = "$(TARGET_NAME)";
+		"SWIFT_APPROACHABLE_CONCURRENCY" = YES;
+		"SWIFT_VERSION" = "6.0";
+		"TARGETED_DEVICE_FAMILY" = "1,2";
+		"TEST_TARGET_NAME" = Taktung;
+	};
+	isa = XCBuildConfiguration;
+	name = Release;
+};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -400,6 +550,8 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		D73000000000000000000000D = { isa = XCConfigurationList; buildConfigurations = (D73000000000000000000000E, D73000000000000000000000F, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		D81800000000000000000007 = { isa = XCConfigurationList; buildConfigurations = (D81800000000000000000008, D81800000000000000000009, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = 76B103DE9E62424AA84073FE /* Project object */;

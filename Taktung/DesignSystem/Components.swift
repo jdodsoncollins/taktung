@@ -5,21 +5,28 @@ struct StateWord: View {
     var tone: ConsoleStateTone
 
     var body: some View {
-        Text(label)
-            .font(MonoFont.body(13, weight: .semibold))
+        Label(label.replacingOccurrences(of: "_", with: " ").capitalized, systemImage: symbol)
+            .font(.caption.weight(.medium))
             .foregroundStyle(tone.color)
-            .textCase(.uppercase)
             .monospacedDigit()
+    }
+
+    private var symbol: String {
+        switch tone {
+        case .ready: "checkmark.circle.fill"
+        case .building: "clock"
+        case .error: "exclamationmark.circle.fill"
+        case .neutral: "circle.dotted"
+        }
     }
 }
 
 struct SectionLabel: View {
     var text: String
     var body: some View {
-        Text(text.uppercased())
-            .font(MonoFont.body(11, weight: .semibold))
-            .tracking(1.2)
-            .foregroundStyle(Palette.textSecondary)
+        Text(text)
+            .font(.headline)
+            .foregroundStyle(Palette.text)
     }
 }
 
@@ -27,7 +34,7 @@ struct Plate<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
         content
-            .padding(Spacing.md)
+            .padding(Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radii.plate, style: .continuous))
             .overlay(
@@ -52,14 +59,15 @@ struct PrimaryButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(MonoFont.body(14, weight: .semibold))
+                .font(.body.weight(.medium))
+                .padding(.horizontal, Spacing.md)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 48)
+                .frame(minHeight: 44)
                 .foregroundStyle(foreground)
                 .background(background, in: RoundedRectangle(cornerRadius: Radii.button, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.button, style: .continuous)
-                        .strokeBorder(role == .ghost ? Palette.border : .clear, lineWidth: 0.5)
+                        .strokeBorder(role == .accent ? .clear : Palette.border, lineWidth: 0.5)
                 )
         }
         .buttonStyle(.plain)
@@ -69,17 +77,16 @@ struct PrimaryButton: View {
 
     private var foreground: Color {
         switch role {
-        case .accent: Palette.textOnAccent
-        case .danger: .white
+        case .accent: Palette.textOnAction
+        case .danger: Palette.danger
         case .ghost: Palette.text
         }
     }
 
     private var background: Color {
         switch role {
-        case .accent: Palette.accent
-        case .danger: Palette.danger
-        case .ghost: Palette.surfaceMuted
+        case .accent: Palette.action
+        case .danger, .ghost: Palette.surface
         }
     }
 }
@@ -92,18 +99,19 @@ struct FilterChip: View {
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(MonoFont.body(12, weight: .semibold))
+                .font(.subheadline.weight(selected ? .semibold : .regular))
                 .lineLimit(1)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .foregroundStyle(selected ? Palette.accent : Palette.textSecondary)
+                .frame(minHeight: 44)
+                .foregroundStyle(selected ? Palette.text : Palette.textSecondary)
                 .background(
-                    Capsule(style: .continuous)
-                        .fill(selected ? Palette.accentSoft : Palette.surfaceMuted)
+                    RoundedRectangle(cornerRadius: Radii.button, style: .continuous)
+                        .fill(selected ? Palette.surface : .clear)
                 )
                 .overlay(
-                    Capsule(style: .continuous)
-                        .strokeBorder(selected ? Palette.accent : Palette.border, lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: Radii.button, style: .continuous)
+                        .strokeBorder(selected ? Palette.border : .clear, lineWidth: 0.5)
                 )
         }
         .buttonStyle(.plain)

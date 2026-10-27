@@ -1,5 +1,22 @@
 import Foundation
 
+enum DeploymentTargetFilter: String, CaseIterable, Identifiable {
+    case all, production, preview
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+}
+
+func searchDeployments(_ deployments: [VercelDeploymentSummary], filter: DeploymentListFilter,
+                       target: DeploymentTargetFilter, query: String) -> [VercelDeploymentSummary] {
+    let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    return filterDeployments(deployments, filter: filter).filter { deployment in
+        let matchesTarget = target == .all || (target == .production ? deployment.target == .production : deployment.target == .preview || deployment.target == nil)
+        let fields = [deployment.meta.githubCommitMessage, deployment.meta.githubCommitRef, deployment.meta.githubCommitSha,
+                      deployment.url, deployment.name, deployment.id, deployment.state.rawValue].compactMap { $0 }
+        return matchesTarget && (query.isEmpty || fields.contains { $0.localizedCaseInsensitiveContains(query) })
+    }
+}
+
 enum DeploymentListFilter: String, Sendable, CaseIterable, Identifiable {
     case all
     case failed

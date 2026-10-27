@@ -1,6 +1,6 @@
 import Foundation
 
-protocol VercelAPIClient: Sendable {
+protocol VercelAPIClient: ProjectInspectionAPI, WebAnalyticsAPI {
     func getUser() async throws -> VercelUser
     func listTeams() async throws -> [VercelTeam]
     func listProjects(teamId: TeamID?) async throws -> [VercelProject]
@@ -14,22 +14,45 @@ protocol VercelAPIClient: Sendable {
         teamId: TeamID?,
         target: DeploymentTarget?
     ) async throws -> VercelDeploymentSummary
+    func promote(deploymentId: DeploymentID, projectId: ProjectID, teamId: TeamID?) async throws
+    func rollback(deploymentId: DeploymentID, projectId: ProjectID, teamId: TeamID?) async throws
+    func productionDeploymentID(projectId: ProjectID, teamId: TeamID?) async throws -> DeploymentID?
 }
 
 final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
     private let baseURL: URL
     private let tokenProvider: @Sendable () async throws -> String?
     private let session: URLSession
+    private let inspection: ProjectInspectionClient
+    private let analytics: WebAnalyticsClient
     private let maxPages = 100
 
     init(
         tokenProvider: @escaping @Sendable () async throws -> String?,
         baseURL: URL = AppConfig.vercelAPIBase,
-        session: URLSession = .shared
+        session: URLSession = URLSession(configuration: .ephemeral)
     ) {
         self.tokenProvider = tokenProvider
         self.baseURL = baseURL
         self.session = session
+        self.inspection = ProjectInspectionClient(baseURL: baseURL, tokenProvider: tokenProvider, session: session)
+        self.analytics = WebAnalyticsClient(baseURL: baseURL, tokenProvider: tokenProvider, session: session)
+    }
+
+    func analyticsOverview(projectID: ProjectID, teamID: TeamID?, window: AnalyticsWindow) async throws -> AnalyticsOverview {
+        try await analytics.analyticsOverview(projectID: projectID, teamID: teamID, window: window)
+    }
+
+    func analyticsSegments(projectID: ProjectID, teamID: TeamID?, dimension: AnalyticsDimension, window: AnalyticsWindow) async throws -> [AnalyticsSegment] {
+        try await analytics.analyticsSegments(projectID: projectID, teamID: teamID, dimension: dimension, window: window)
+    }
+
+    func inspect(_ tool: ProjectTool, projectID: ProjectID, teamID: TeamID?, deploymentID: DeploymentID?) async throws -> InspectionResult {
+        try await inspection.inspect(tool, projectID: projectID, teamID: teamID, deploymentID: deploymentID)
+    }
+
+    func runtimeLogs(projectID: ProjectID, teamID: TeamID?, deploymentID: DeploymentID) -> AsyncThrowingStream<RuntimeLogEntry, Error> {
+        inspection.runtimeLogs(projectID: projectID, teamID: teamID, deploymentID: deploymentID)
     }
 
     func getUser() async throws -> VercelUser {
@@ -104,7 +127,7 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
                 prodFromTarget = mapRawDeployment(target)
                 if var mapped = prodFromTarget { mapped.target = .production; prodFromTarget = mapped }
             }
-            let production = summarized.production ?? prodFromTarget
+            let production = prodFromTarget ?? summarized.production
             let attention = computeAttention(
                 production: production ?? summarized.production,
                 latest: summarized.latest ?? production,
@@ -184,24 +207,27 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
     }
 
     func getBuildLogLines(id: DeploymentID, teamId: TeamID?, limit: Int = 100) async throws -> [BuildLogLine] {
-        var query = ["builds": "1", "direction": "forward"]
+        let boundedLimit = min(500, max(1, limit))
+        var query = ["builds": "1", "direction": "backward", "follow": "0", "limit": String(boundedLimit)]
         if let teamId { query["teamId"] = teamId }
-        let data = try await requestJSON(path: "/v3/deployments/\(id)/events", query: query)
-        let events = data.array ?? data["events"]?.array ?? []
+        let data = try await requestJSON(path: "/v3/deployments/\(id)/events", query: query, maximumBytes: 2_097_152)
+        guard let events = data.array ?? data["events"]?.array else {
+            throw VercelAPIError.decodeFailed("build logs", "missing events")
+        }
         var lines: [BuildLogLine] = []
         for e in events {
             let text = e["payload"]?["text"]?.string ?? e["text"]?.string ?? ""
             if text.isEmpty { continue }
             lines.append(
                 BuildLogLine(
-                    text: text,
+                    text: inspectionText(text, limit: 16_384),
                     type: e["type"]?.string ?? e["payload"]?["info"]?["type"]?.string,
                     created: e["created"]?.double
                 )
             )
         }
-        if lines.count > limit { return Array(lines.suffix(limit)) }
-        return lines
+        // Backward requests select the newest bounded window; display it chronologically.
+        return Array(lines.prefix(boundedLimit).reversed())
     }
 
     func listEnvVarMeta(projectId: ProjectID, teamId: TeamID?) async throws -> [EnvVarMeta] {
@@ -263,11 +289,29 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
         return mapped
     }
 
+    func promote(deploymentId: DeploymentID, projectId: ProjectID, teamId: TeamID?) async throws {
+        _ = try await requestJSON(path: "/v10/projects/\(projectId)/promote/\(deploymentId)",
+                                  query: teamId.map { ["teamId": $0] } ?? [:], method: "POST")
+    }
+
+    func rollback(deploymentId: DeploymentID, projectId: ProjectID, teamId: TeamID?) async throws {
+        _ = try await requestJSON(path: "/v1/projects/\(projectId)/rollback/\(deploymentId)",
+                                  query: teamId.map { ["teamId": $0] } ?? [:], method: "POST")
+    }
+
+    func productionDeploymentID(projectId: ProjectID, teamId: TeamID?) async throws -> DeploymentID? {
+        let data = try await requestJSON(path: "/v9/projects/\(projectId)",
+                                         query: teamId.map { ["teamId": $0] } ?? [:])
+        return data["targets"]?["production"]?["id"]?.string
+            ?? data["targets"]?["production"]?["uid"]?.string
+    }
+
     private func requestJSON(
         path: String,
         query: [String: String] = [:],
         method: String = "GET",
-        jsonBody: [String: Any]? = nil
+        jsonBody: [String: Any]? = nil,
+        maximumBytes: Int = 8_388_608
     ) async throws -> JSONValue {
         guard let token = try await tokenProvider(), !token.isEmpty else {
             throw VercelAPIError(status: 401, detail: "Missing Vercel access token.")
@@ -289,7 +333,7 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
         guard let finalURL = components?.url else {
             throw VercelAPIError(status: nil, detail: "Invalid Vercel URL")
         }
-        var request = URLRequest(url: finalURL)
+        var request = URLRequest(url: finalURL, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -297,7 +341,15 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
             request.httpBody = try JSONSerialization.data(withJSONObject: jsonBody)
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
-        let (data, response) = try await session.data(for: request)
+        let (bytes, response) = try await session.bytes(for: request)
+        var data = Data()
+        for try await byte in bytes {
+            try Task.checkCancellation()
+            guard data.count < maximumBytes else {
+                throw VercelAPIError(status: nil, detail: "Vercel response exceeded its size limit.")
+            }
+            data.append(byte)
+        }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 204 { return .null }
         if !(200..<300).contains(status) {
@@ -307,7 +359,7 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
                 ?? parsed?["message"]?.string
                 ?? String(data: data, encoding: .utf8)
                 ?? "HTTP \(status)"
-            throw VercelAPIError(status: status, detail: message)
+            throw VercelAPIError(status: status, detail: redactBuildLog(message))
         }
         if data.isEmpty { return .null }
         let obj = try JSONSerialization.jsonObject(with: data)

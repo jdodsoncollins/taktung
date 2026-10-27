@@ -1,0 +1,93 @@
+{
+  "identifier": "72127EEC-32AC-4ACD-B575-CE8A5E2D4DEA",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0.99",
+      "familyShareable": false,
+      "internalID": "1000000001",
+      "localizations": [
+        {
+          "description": "An optional one-time tip to support Taktung. No features are unlocked.",
+          "displayName": "Kind Tip",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.jcollins.takt.tip.kind",
+      "referenceName": "Kind Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "1.99",
+      "familyShareable": false,
+      "internalID": "1000000002",
+      "localizations": [
+        {
+          "description": "An optional one-time tip to support Taktung. No features are unlocked.",
+          "displayName": "Thoughtful Tip",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.jcollins.takt.tip.thoughtful",
+      "referenceName": "Thoughtful Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "1000000003",
+      "localizations": [
+        {
+          "description": "An optional one-time tip to support Taktung. No features are unlocked.",
+          "displayName": "Wonderful Tip",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.jcollins.takt.tip.wonderful",
+      "referenceName": "Wonderful Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "3.99",
+      "familyShareable": false,
+      "internalID": "1000000004",
+      "localizations": [
+        {
+          "description": "An optional one-time tip to support Taktung. No features are unlocked.",
+          "displayName": "Incredible Tip",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.jcollins.takt.tip.incredible",
+      "referenceName": "Incredible Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "1000000005",
+      "localizations": [
+        {
+          "description": "An optional one-time tip to support Taktung. No features are unlocked.",
+          "displayName": "Extraordinary Tip",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.jcollins.takt.tip.extraordinary",
+      "referenceName": "Extraordinary Tip",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_askToBuyEnabled": false,
+    "_disableDialogs": false,
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

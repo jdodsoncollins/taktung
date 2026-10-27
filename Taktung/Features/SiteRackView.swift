@@ -1,73 +1,60 @@
 import SwiftUI
 
 struct SiteRackView: View {
+    @Environment(\.dynamicTypeSize) private var textSize
     var project: VercelProject
 
     var body: some View {
-        let prod = project.productionDeployment
-        let clear = siteClearWord(project)
-        let age = siteStampAge(project)
-        let prodLabel = siteStampProd(project)
-        let git = siteStampGit(project)
-        let state = prod?.state ?? .unknown
-        let stateTone = deploymentStateTone(state)
-
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Plate {
-                HStack {
-                    Spacer(minLength: 0)
-                    DeploymentPreviewThumb(
-                        url: prod?.url,
-                        state: prod?.state ?? .unknown,
-                        variant: .banner
-                    )
-                    Spacer(minLength: 0)
-                }
-                .padding(.vertical, Spacing.sm)
-            }
-
-            Plate {
+        let production = project.productionDeployment
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            if textSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    HStack(spacing: Spacing.sm) {
-                        StateWord(label: clear.label, tone: clear.tone)
-                        Text("·")
-                            .font(MonoFont.body(13, weight: .semibold))
-                            .foregroundStyle(Palette.textSecondary)
-                        StateWord(label: state.rawValue, tone: stateTone)
-                    }
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Palette.progressTrack)
-                            Capsule()
-                                .fill(Palette.accent)
-                                .frame(width: max(2, geo.size.width * age.fill))
-                        }
-                    }
-                    .frame(height: 3)
-                    HStack(alignment: .top, spacing: Spacing.md) {
-                        stampCell("PROD", prodLabel)
-                        stampCell("GIT", git)
-                        stampCell("AGE", age.label)
-                    }
+                    Text("Production").font(.title2.weight(.semibold))
+                    productionState
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Production").font(.title2.weight(.semibold))
+                    Spacer(minLength: Spacing.sm)
+                    productionState
                 }
             }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(clear.label). \(state.rawValue). \(prodLabel). \(git). \(age.label).")
+            Plate {
+                HStack(alignment: .top, spacing: Spacing.lg) {
+                    if !textSize.isAccessibilitySize, production?.state == .ready {
+                        DeploymentPreviewThumb(url: production?.url, state: production?.state ?? .unknown, variant: .summary)
+                    }
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        if let production {
+                            Text(deploymentTitle(production))
+                                .font(.body.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+                            Label(siteStampProd(project), systemImage: "arrow.triangle.branch")
+                                .font(.subheadline).foregroundStyle(Palette.textSecondary)
+                            let age = formatCompactAge(production.createdAt)
+                            if textSize.isAccessibilitySize {
+                                VStack(alignment: .leading, spacing: Spacing.sm) {
+                                    Text(shortSha(production)).font(MonoFont.body())
+                                    Text(age == "now" ? "Just now" : "\(age) ago").font(.caption)
+                                }.foregroundStyle(Palette.textSecondary)
+                            } else {
+                                HStack(spacing: Spacing.sm) {
+                                    Text(shortSha(production)).font(MonoFont.body())
+                                    Text(age == "now" ? "· Just now" : "· \(age) ago").font(.caption)
+                                }.foregroundStyle(Palette.textSecondary)
+                            }
+                        } else {
+                            Text("No production deployment").font(.body.weight(.medium))
+                            Text("Open Deploys to inspect this site's builds.")
+                                .font(.subheadline).foregroundStyle(Palette.textSecondary)
+                        }
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }.foregroundStyle(Palette.text)
     }
 
-    private func stampCell(_ key: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(key)
-                .font(MonoFont.body(11, weight: .semibold))
-                .tracking(1.2)
-                .foregroundStyle(Palette.accent)
-            Text(value)
-                .font(MonoFont.body(13, weight: .semibold))
-                .foregroundStyle(Palette.text)
-                .lineLimit(1)
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    private var productionState: some View {
+        StateWord(label: project.productionDeployment?.state.rawValue ?? "Not deployed",
+                  tone: deploymentStateTone(project.productionDeployment?.state ?? .unknown))
     }
 }
