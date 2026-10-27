@@ -79,14 +79,17 @@ struct DeploymentQuery: Hashable, Sendable {
         if states == [.canceled] { return "Canceled" }
         if states == [.blocked] { return "Blocked" }
         if states.isSubset(of: Self.inFlightStates) { return "Building" }
-        if states == Self.inFlightStates.union([.ready]) { return "Not failed" }
+        if notFailed { return "Not failed" }
         return states.map { $0.rawValue.capitalized }.sorted().joined(separator: " or ")
     }
 
+    private var notFailed: Bool { states == Self.inFlightStates.union([.ready]) }
+
     var title: String {
-        var words = [stateLabel, target.map { $0.rawValue.capitalized }].compactMap { $0 }
+        var words = [notFailed ? nil : stateLabel, target.map { $0.rawValue.capitalized }].compactMap { $0 }
         if limit == 1 { words.insert("Latest", at: 0) }
         words.append(limit == 1 ? "deployment" : "deployments")
+        if notFailed { words.append("that didn't fail") }
         let first = words[0].prefix(1).uppercased() + words[0].dropFirst()
         return ([first] + words.dropFirst().map { $0.lowercased() }).joined(separator: " ")
     }
@@ -120,11 +123,43 @@ struct DeploymentQuery: Hashable, Sendable {
 
     /// Honest coverage for the result caption: the server filters the whole
     /// history, but local text matching only sees the newest window.
-    var coverage: String {
+    func coverage(count: Int, source: String = "Vercel") -> String? {
         if text != nil || sha.map(isShortSHA) == true {
-            return "Matched on this device within the newest \(Self.maximumLimit) results Vercel returned."
+            return "Matched on this device within the newest \(Self.maximumLimit) results from \(source)."
         }
-        return limit == 1 ? "Newest match from Vercel." : "Newest \(limit) matches from Vercel."
+        if count == 0 { return nil }
+        if count < limit { return count == 1 ? "The only match from \(source)." : "All \(count) matches from \(source)." }
+        return count == 1 ? "Newest match from \(source)." : "Newest \(count) matches from \(source)."
+    }
+
+    /// Request words that read back as this query, so the field matches the
+    /// results after a filter chip is removed.
+    var phrase: String {
+        var words: [String] = []
+        if limit == 1 { words.append("latest") } else if limit != Self.defaultLimit { words.append("last \(limit)") }
+        if let statePhrase { words.append(statePhrase) }
+        if let target { words.append(target.rawValue) }
+        words.append(limit == 1 ? "deploy" : "deployments")
+        if let branch { words.append("branch \(branch)") }
+        if let sha { words.append(sha) }
+        if let window { words.append(window.phrase) }
+        if let text { words.append("\"\(text)\"") }
+        return words.joined(separator: " ")
+    }
+
+    private var statePhrase: String? {
+        if states.isEmpty { return nil }
+        if notFailed { return "not failed" }
+        var words: [String] = []
+        if states.contains(.ready) { words.append("ready") }
+        if states.contains(.error) {
+            words.append("failed")
+        } else {
+            if states.contains(.canceled) { words.append("canceled") }
+            if states.contains(.blocked) { words.append("blocked") }
+        }
+        if !states.isDisjoint(with: Self.inFlightStates) { words.append("building") }
+        return words.joined(separator: " or ")
     }
 }
 
@@ -169,6 +204,17 @@ enum SearchWindow: Hashable, Sendable {
         case .thisMonth: "This month"
         case .lastHours(let h): h == 1 ? "Last hour" : "Last \(h) hours"
         case .lastDays(let d): d == 1 ? "Last 24 hours" : "Last \(d) days"
+        }
+    }
+
+    var phrase: String {
+        switch self {
+        case .today: "today"
+        case .yesterday: "yesterday"
+        case .thisWeek: "this week"
+        case .thisMonth: "this month"
+        case .lastHours(let h): h == 1 ? "last hour" : "last \(h) hours"
+        case .lastDays(let d): d == 1 ? "last day" : "last \(d) days"
         }
     }
 }

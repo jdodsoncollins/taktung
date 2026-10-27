@@ -124,7 +124,9 @@ enum SearchRules {
             parsed.query.text = quoted.text
             remaining.removeSubrange(quoted.range)
         }
-        let tokens = tokenize(remaining)
+        // Vocabulary matches ignore case; branches and commit text keep the case typed.
+        let written = tokenize(remaining, preservingCase: true)
+        let tokens = written.map { $0.lowercased() }
         var states: Set<DeploymentState> = []
         var negatedStates: Set<DeploymentState> = []
         var negation = 0
@@ -135,6 +137,7 @@ enum SearchRules {
         var generalEnvironment = false
         var i = 0
         func token(_ offset: Int) -> String? { tokens.indices.contains(i + offset) ? tokens[i + offset] : nil }
+        func typed(_ offset: Int) -> String { written[i + offset] }
 
         while i < tokens.count {
             let t = tokens[i]
@@ -153,17 +156,17 @@ enum SearchRules {
             } else if previewWords.contains(t) {
                 parsed.query.target = .preview
             } else if t == "branch", let next = token(1), isBranchLike(next), !vocabulary.contains(next) {
-                parsed.query.branch = next
+                parsed.query.branch = typed(1)
                 consumed = 2
             } else if let next = token(1), next == "branch", isBranchLike(t), !vocabulary.contains(t) || commonBranches.contains(t) {
-                parsed.query.branch = t
+                parsed.query.branch = typed(0)
                 consumed = 2
             } else if (t == "on" || t == "from"), let next = token(1), isBranchLike(next),
                       commonBranches.contains(next) || next.contains("/") {
-                parsed.query.branch = next
+                parsed.query.branch = typed(1)
                 consumed = 2
             } else if commonBranches.contains(t) {
-                parsed.query.branch = t
+                parsed.query.branch = typed(0)
             } else if isCommitSHA(t) {
                 parsed.query.sha = t
             } else if let match = timeWindow(at: i, in: tokens) {
@@ -176,7 +179,7 @@ enum SearchRules {
                     consumed = 2
                 }
             } else if let n = Int(t) {
-                if (1...DeploymentQuery.maximumLimit).contains(n) { limit = n } else { parsed.unresolved.append(t) }
+                if (1...DeploymentQuery.maximumLimit).contains(n) { limit = n } else { parsed.unresolved.append(typed(0)) }
             } else if deploymentNouns.contains(t) {
                 parsed.deploymentNoun = true
                 if singularNouns.contains(t) { singular = true }
@@ -189,7 +192,7 @@ enum SearchRules {
             } else if let site = singleSite(t, projects: projects) {
                 parsed.site = site
             } else {
-                parsed.unresolved.append(t)
+                parsed.unresolved.append(typed(0))
             }
             if !negates { negation = max(0, negation - consumed) }
             i += consumed
@@ -255,8 +258,8 @@ enum SearchRules {
         }
     }
 
-    static func tokenize(_ text: String) -> [String] {
-        text.lowercased()
+    static func tokenize(_ text: String, preservingCase: Bool = false) -> [String] {
+        (preservingCase ? text : text.lowercased())
             .split(whereSeparator: { $0.isWhitespace || $0 == "," || $0 == ";" })
             .map { word in
                 var w = String(word).trimmingCharacters(in: CharacterSet(charactersIn: "?!.:;\"“”‘’()[]{}"))

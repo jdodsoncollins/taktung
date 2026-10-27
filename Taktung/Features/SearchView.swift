@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SearchView: View {
     @Environment(AppSession.self) private var session
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var query = ""
     @State private var submittedQuery = ""
     @State private var phase: SearchPhase = .idle
@@ -90,16 +91,13 @@ struct SearchView: View {
         case .loading(let q, let interpreter):
             VStack(alignment: .leading, spacing: Spacing.md) {
                 resultsHeader(q.title, query: q, interpreter: interpreter)
-                ProgressView("Searching Vercel…").frame(maxWidth: .infinity)
+                ProgressView("Searching…").frame(maxWidth: .infinity)
             }
         case .deployments(let q, let items, let interpreter):
             VStack(alignment: .leading, spacing: Spacing.sm) {
-                resultsHeader(q.title, query: q, interpreter: interpreter)
+                resultsHeader(q.title, query: q, interpreter: interpreter, count: items.count)
                 if items.isEmpty {
-                    ContentUnavailableView("No matching deployments", systemImage: "magnifyingglass",
-                        description: Text(q.hasFilters
-                            ? "Nothing in this site's Vercel history matches these filters. Remove a filter or start a new search."
-                            : "This site has no deployments yet."))
+                    outcome("No matching deployments", systemImage: "magnifyingglass", detail: emptyDetail(q))
                 } else {
                     ForEach(items) { deployment in
                         NavigationLink { DeploymentDetailView(deployment: deployment) } label: {
@@ -111,7 +109,7 @@ struct SearchView: View {
         case .failed(let q, let interpreter, let message):
             VStack(alignment: .leading, spacing: Spacing.md) {
                 resultsHeader(q.title, query: q, interpreter: interpreter)
-                ContentUnavailableView("Search failed", systemImage: "exclamationmark.triangle", description: Text(message))
+                outcome("Search failed", systemImage: "exclamationmark.triangle", detail: message)
                 PrimaryButton(title: "Try again", role: .ghost) { rerun(q, interpreter: interpreter) }
             }
         case .sites(let projects):
@@ -131,8 +129,8 @@ struct SearchView: View {
         case .otherSite(let project, let q):
             VStack(alignment: .leading, spacing: Spacing.md) {
                 resultsHeader(q.title, query: nil, interpreter: .rules)
-                ContentUnavailableView("Search \(siteTitle(project))?", systemImage: "globe",
-                    description: Text("This search names a different site. Switch to it to search its deployments."))
+                outcome("Search \(siteTitle(project))?", systemImage: "globe",
+                        detail: "This search names a different site. Switch to it to search its deployments.")
                 PrimaryButton(title: "Switch to \(siteTitle(project))") {
                     session.pendingSearch = submittedQuery
                     Task { await session.selectProject(project.id) }
@@ -153,7 +151,7 @@ struct SearchView: View {
         case .chooseSite:
             VStack(alignment: .leading, spacing: Spacing.md) {
                 resultsHeader("Choose a site", query: nil, interpreter: .rules)
-                ContentUnavailableView("Choose a site", systemImage: "globe", description: Text("Deployment and environment searches use one selected site."))
+                outcome("One site at a time", systemImage: "globe", detail: "Deployment and environment searches use the selected site. Choose one and this search runs there.")
                 PrimaryButton(title: "Choose a site") {
                     session.pendingSearch = submittedQuery
                     session.sitePickerOpen = true
@@ -167,11 +165,14 @@ struct SearchView: View {
         }
     }
 
-    private func resultsHeader(_ title: String, query: DeploymentQuery?, interpreter: SearchInterpreter) -> some View {
+    private func resultsHeader(_ title: String, query: DeploymentQuery?, interpreter: SearchInterpreter, count: Int? = nil) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(title).font(.headline)
-                Spacer()
+            let layout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.xs))
+                : AnyLayout(HStackLayout(alignment: .firstTextBaseline))
+            layout {
+                Text(title).font(.headline).fixedSize(horizontal: false, vertical: true)
+                if !typeSize.isAccessibilitySize { Spacer() }
                 Button { returnToSuggestions(focus: true) } label: {
                     Label("New search", systemImage: "arrow.uturn.backward")
                         .font(.subheadline).frame(minHeight: 44)
@@ -181,15 +182,15 @@ struct SearchView: View {
             if let query {
                 let filters = query.filters
                 if !filters.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: Spacing.sm) {
-                            ForEach(filters) { filter in
-                                RemovableFilterChip(label: filter.label) { rerun(query.removing(filter.kind), interpreter: interpreter) }
-                            }
+                    ChipFlow {
+                        ForEach(filters) { filter in
+                            RemovableFilterChip(label: filter.label) { narrow(to: query.removing(filter.kind), interpreter: interpreter) }
                         }
                     }
                 }
-                Text(query.coverage).font(.footnote).foregroundStyle(Palette.textSecondary)
+                if let count, let coverage = query.coverage(count: count, source: session.evidenceScope?.isDemo == true ? "demo data" : "Vercel") {
+                    Text(coverage).font(.footnote).foregroundStyle(Palette.textSecondary)
+                }
             }
             if interpreter == .appleIntelligence {
                 Label("Interpreted with Apple Intelligence on this device", systemImage: "sparkle")
@@ -253,6 +254,33 @@ struct SearchView: View {
         }
     }
 
+    private func outcome(_ title: String, systemImage: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Label(title, systemImage: systemImage).font(.headline)
+            Text(detail).font(.subheadline).foregroundStyle(Palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, Spacing.sm)
+    }
+
+    private func emptyDetail(_ q: DeploymentQuery) -> String {
+        if let text = q.text {
+            return "No commit message, branch or author in the newest \(DeploymentQuery.maximumLimit) results contains “\(text)”. If those words weren't meant as commit text, remove that filter."
+        }
+        return q.hasFilters
+            ? "Nothing in this site's deployment history matches these filters. Remove one to widen the search."
+            : "This site has no deployments yet."
+    }
+
+    /// Removing a chip re-runs the narrower query and rewrites the field to match it.
+    private func narrow(to q: DeploymentQuery, interpreter: SearchInterpreter) {
+        let phrase = q.phrase
+        submittedQuery = phrase
+        query = phrase
+        rerun(q, interpreter: interpreter)
+    }
+
     private func rerun(_ q: DeploymentQuery, interpreter: SearchInterpreter) {
         searchTask?.cancel()
         searchTask = Task { await load(q, interpreter: interpreter) }
@@ -282,6 +310,35 @@ struct SearchView: View {
     }
 }
 
+/// Wraps filter chips onto as many lines as they need instead of scrolling them off screen.
+private struct ChipFlow: Layout {
+    var spacing: CGFloat = Spacing.sm
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, line: CGFloat = 0, widest: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
+            if x > 0, x + size.width > width { x = 0; y += line + spacing; line = 0 }
+            x += size.width + spacing
+            line = max(line, size.height)
+            widest = max(widest, x - spacing)
+        }
+        return CGSize(width: proposal.width ?? widest, height: y + line)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, line: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil))
+            if x > bounds.minX, x + size.width > bounds.maxX { x = bounds.minX; y += line + spacing; line = 0 }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(width: min(size.width, bounds.width), height: size.height))
+            x += size.width + spacing
+            line = max(line, size.height)
+        }
+    }
+}
+
 private struct RemovableFilterChip: View {
     var label: String
     var remove: () -> Void
@@ -289,7 +346,7 @@ private struct RemovableFilterChip: View {
     var body: some View {
         Button(action: remove) {
             HStack(spacing: Spacing.xs) {
-                Text(label).lineLimit(1)
+                Text(label).fixedSize(horizontal: false, vertical: true)
                 Image(systemName: "xmark").font(.caption2.weight(.semibold)).foregroundStyle(Palette.textSecondary)
             }
             .font(.subheadline)

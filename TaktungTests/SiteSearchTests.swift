@@ -62,6 +62,7 @@ struct SiteSearchTests {
         #expect(deployments("canceled deployments")?.0.states == [.canceled])
         #expect(deployments("deploys on feature/search-fix")?.0.branch == "feature/search-fix")
         #expect(deployments("hotfix branch deploys")?.0.branch == "hotfix")
+        #expect(deployments("deploys on Feature/Login")?.0.branch == "Feature/Login", "Branch filters are exact on Vercel")
         #expect(deployments("deploy 3f2a91c")?.0.sha == "3f2a91c")
         #expect(deployments(#"deploys "fix analytics""#)?.0.text == "fix analytics")
     }
@@ -169,6 +170,33 @@ struct DeploymentQueryTests {
         #expect(!query.matches(deploy(.error, target: .preview), now: now, calendar: calendar))
         #expect(!query.matches(deploy(.ready, target: .preview, minutesAgo: 90), now: now, calendar: calendar))
         #expect(!query.matches(deploy(.ready, target: .preview, message: "Update copy"), now: now, calendar: calendar))
+    }
+
+    @Test func phraseReadsBackAsTheSameQuery() {
+        let queries = [
+            DeploymentQuery(states: [.ready]),
+            DeploymentQuery(states: DeploymentQuery.failedStates, target: .preview, window: .yesterday),
+            DeploymentQuery(states: [.ready], branch: "Feature/Login", limit: 1),
+            DeploymentQuery(states: DeploymentQuery.inFlightStates.union([.ready]), target: .production, window: .lastDays(7)),
+            DeploymentQuery(states: [.canceled], window: .lastHours(1), text: "fix analytics", limit: 5),
+            DeploymentQuery(sha: "3f2a91c", window: .thisWeek),
+            DeploymentQuery(),
+        ]
+        for query in queries {
+            let plan = planSiteSearch(query.phrase, projects: buildDemoProjects(), selectedProjectID: DemoIDs.portfolio).plan
+            #expect(plan == .deployments(query), "\(query.phrase)")
+        }
+    }
+
+    @Test func titlesAndCaptionsDescribeWhatCameBack() {
+        #expect(DeploymentQuery(states: DeploymentQuery.inFlightStates.union([.ready])).title == "Deployments that didn't fail")
+        #expect(DeploymentQuery(states: [.ready], target: .production, limit: 1).title == "Latest ready production deployment")
+        let ready = DeploymentQuery(states: [.ready])
+        #expect(ready.coverage(count: 16) == "All 16 matches from Vercel.")
+        #expect(ready.coverage(count: 20) == "Newest 20 matches from Vercel.")
+        #expect(ready.coverage(count: 1, source: "demo data") == "The only match from demo data.")
+        #expect(ready.coverage(count: 0) == nil)
+        #expect(DeploymentQuery(text: "fix").coverage(count: 3)?.contains("newest 100") == true)
     }
 
     @Test func removingFiltersWidensTheQuery() {
