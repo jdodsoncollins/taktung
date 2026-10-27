@@ -137,7 +137,10 @@ enum SearchRules {
         var generalEnvironment = false
         var i = 0
         func token(_ offset: Int) -> String? { tokens.indices.contains(i + offset) ? tokens[i + offset] : nil }
-        func typed(_ offset: Int) -> String { written[i + offset] }
+        // Vercel's branch filter is case-sensitive: keep typed case, except for the usual lowercase names.
+        func typed(_ offset: Int) -> String {
+            commonBranches.contains(tokens[i + offset]) ? tokens[i + offset] : written[i + offset]
+        }
 
         while i < tokens.count {
             let t = tokens[i]

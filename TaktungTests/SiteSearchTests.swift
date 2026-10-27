@@ -63,6 +63,7 @@ struct SiteSearchTests {
         #expect(deployments("deploys on feature/search-fix")?.0.branch == "feature/search-fix")
         #expect(deployments("hotfix branch deploys")?.0.branch == "hotfix")
         #expect(deployments("deploys on Feature/Login")?.0.branch == "Feature/Login", "Branch filters are exact on Vercel")
+        #expect(deployments("ready deploys on Master")?.0.branch == "master")
         #expect(deployments("deploy 3f2a91c")?.0.sha == "3f2a91c")
         #expect(deployments(#"deploys "fix analytics""#)?.0.text == "fix analytics")
     }
