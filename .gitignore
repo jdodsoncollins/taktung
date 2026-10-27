@@ -31,3 +31,19 @@ Secrets.plist
 .grok/
 .idea/
 *.swp
+
+# Release outputs and local App Store evidence. QA receipts include App Review
+# contact details, extracted IPAs and provisioning profiles; keep them local.
+.asc/*
+!.asc/ExportOptions*.plist
+!.asc/screenshots.json
+!.asc/shots.settings.json
+!.asc/description-*.txt
+!.asc/release-notes-*.txt
+artifacts/
+.impeccable/review/
+*.xcarchive
+*.xcresult
+*.mobileprovision
+*.p8
+*.p12
