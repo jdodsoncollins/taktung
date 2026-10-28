@@ -87,3 +87,33 @@ Monitor without changing anything:
 asc builds info --build-id 41458abb-bc66-4037-87c7-02d7e8a19137
 asc builds groups list --build-id 41458abb-bc66-4037-87c7-02d7e8a19137
 ```
+
+## App Review submission — October 28
+
+The user approved submission in the project thread ("Submit"). That covered submitting 1.9.0 (48) for review with automatic release after approval, the drafted store text and the review-notes change.
+
+- **Version:** `baf7e0e9-8706-4c46-a994-aba94b180105`, **1.9.0**, **WAITING_FOR_REVIEW**, build 48 (`41458abb-bc66-4037-87c7-02d7e8a19137`) attached.
+- **Review submission:** `c62e8c60-679e-4e89-9955-f3e72d6e1c28`, **WAITING_FOR_REVIEW**, submitted **2026-10-28 02:43:21 UTC** with one item, the app version (READY_FOR_REVIEW).
+- **Release policy:** **AFTER_APPROVAL**, no phased release, matching 1.8.1.
+- **Metadata:** staged from `metadata/version/1.9.0/en-US.json`. The field-level plan changed only the description, promotional text and What's New. Keywords, URLs, app information, pricing, tips and media were not changed.
+- **Inherited:** all 31 screenshots and both App Previews (COMPLETE), age rating 4+ (Brazil L), copyright and review contact.
+- **Review notes:** updated for this version. The existing block is kept, the stale sentence about tip products being in their first review is removed, and a paragraph explains the 1.9.0 features: Search on every device and its Apple Intelligence switch, "Since you last looked", Field Log search and summary, failed-build key lines, and Spotlight being off by default. The reviewer access instructions are unchanged and are not reproduced here.
+- **Validation:** strict validation reported 0 errors and 0 warnings, plus the standard App Privacy publish-state advisory. The submit dry run confirmed build 48 was already attached and no other submission was open.
+- **What's New (en-US):**
+
+  > Search now works on every iPhone and iPad. Ask in plain words, like “failed preview builds yesterday” or “last successful deploy on main”, and Taktung asks Vercel directly.
+  >
+  > - Home shows what changed since you last looked.
+  > - Search the Field Log in your own words and summarize the last 7 days.
+  > - Failed builds show their key log lines.
+  > - Optionally add recent deployments and Field Log notes to Spotlight.
+  >
+  > With Apple Intelligence, Taktung can also read unusual phrasing and explain a failed build in one sentence, on your device.
+
+- 1.8.1 (47) remains READY_FOR_DISTRIBUTION and was not changed.
+
+Monitor without changing the submission:
+
+```sh
+asc review submissions-get --id c62e8c60-679e-4e89-9955-f3e72d6e1c28 --include items
+```
