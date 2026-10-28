@@ -61,15 +61,40 @@ struct DeploymentQuery: Hashable, Sendable {
             if created < bounds.since { return false }
             if let until = bounds.until, created >= until { return false }
         }
-        if let text {
-            // Every word must appear somewhere, in any order.
-            let fields = [d.meta.githubCommitMessage, d.meta.githubCommitRef, d.meta.githubCommitSha,
-                          d.meta.githubCommitAuthorLogin, d.meta.githubCommitAuthorName, d.creatorUsername, d.url]
-                .compactMap { $0 }.joined(separator: "\n")
-            let words = text.split(whereSeparator: \.isWhitespace)
-            if !words.allSatisfy({ fields.localizedCaseInsensitiveContains($0) }) { return false }
-        }
+        if let text, !Self.containsEveryWord(of: text, in: Self.searchableText(d)) { return false }
         return true
+    }
+
+    /// The newest matches, at most `limit`. When commit text matches nothing
+    /// exactly, related words get one more pass (see `CommitTextMatcher`).
+    func select(from records: [VercelDeploymentSummary], now: Date = Date(), calendar: Calendar = .current,
+                matcher: CommitTextMatcher = .onDevice) -> [VercelDeploymentSummary] {
+        let exact = records.filter { matches($0, now: now, calendar: calendar) }
+        guard exact.isEmpty, let text else { return Array(exact.prefix(max(1, limit))) }
+        let expansions = matcher.expansions(for: text)
+        var otherFilters = self
+        otherFilters.text = nil
+        let related = records.filter {
+            otherFilters.matches($0, now: now, calendar: calendar) && matcher.matches(expansions, in: Self.searchableText($0))
+        }
+        return Array(related.prefix(max(1, limit)))
+    }
+
+    /// True when `d` was found through related words rather than the typed text.
+    func matchedRelatedWords(_ d: VercelDeploymentSummary) -> Bool {
+        guard let text else { return false }
+        return !Self.containsEveryWord(of: text, in: Self.searchableText(d))
+    }
+
+    static func searchableText(_ d: VercelDeploymentSummary) -> String {
+        [d.meta.githubCommitMessage, d.meta.githubCommitRef, d.meta.githubCommitSha,
+         d.meta.githubCommitAuthorLogin, d.meta.githubCommitAuthorName, d.creatorUsername, d.url]
+            .compactMap { $0 }.joined(separator: "\n")
+    }
+
+    /// Every word must appear somewhere, in any order.
+    private static func containsEveryWord(of text: String, in fields: String) -> Bool {
+        text.split(whereSeparator: \.isWhitespace).allSatisfy { fields.localizedCaseInsensitiveContains($0) }
     }
 
     var stateLabel: String? {

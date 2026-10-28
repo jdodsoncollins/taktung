@@ -100,6 +100,11 @@ struct SearchView: View {
                 if items.isEmpty {
                     outcome("No matching deployments", systemImage: "magnifyingglass", detail: emptyDetail(q))
                 } else {
+                    if let text = q.text, items.contains(where: q.matchedRelatedWords) {
+                        Label("Nothing contains “\(text)” exactly, so these match related words.", systemImage: "text.magnifyingglass")
+                            .font(.footnote).foregroundStyle(Palette.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     ForEach(items) { deployment in
                         NavigationLink { DeploymentDetailView(deployment: deployment) } label: {
                             DeploymentRowView(deployment: deployment)
@@ -299,7 +304,7 @@ struct SearchView: View {
 
     private func emptyDetail(_ q: DeploymentQuery) -> String {
         if let text = q.text {
-            return "No commit message, branch or author in the newest \(DeploymentQuery.maximumLimit) results contains “\(text)”. If those words weren't meant as commit text, remove that filter."
+            return "No commit message, branch or author in the newest \(DeploymentQuery.maximumLimit) results contains “\(text)” or related words. If those words weren't meant as commit text, remove that filter."
         }
         return q.hasFilters
             ? "Nothing in this site's deployment history matches these filters. Remove one to widen the search."

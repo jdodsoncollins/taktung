@@ -26,7 +26,7 @@ extension VercelAPIClient {
     func searchDeployments(projectId: ProjectID, teamId: TeamID?, query: DeploymentQuery) async throws -> [VercelDeploymentSummary] {
         let now = Date()
         let window = try await listDeployments(projectId: projectId, teamId: teamId, limit: DeploymentQuery.maximumLimit)
-        return Array(window.filter { query.matches($0, now: now) }.prefix(query.limit))
+        return query.select(from: window, now: now)
     }
 }
 
@@ -203,12 +203,13 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
         let now = Date()
         let filters = query.apiParameters(now: now)
         let wanted = max(1, query.limit)
-        var matches: [VercelDeploymentSummary] = []
+        var records: [VercelDeploymentSummary] = []
+        var exactMatches = 0
         var fetched = 0
         var until = filters["until"].flatMap(Int.init)
         // Vercel filters state, target, branch, SHA and time on the server. Commit
         // text is matched here, over at most `fetchLimit` newest server results.
-        for _ in 0..<maxPages where matches.count < wanted && fetched < query.fetchLimit {
+        for _ in 0..<maxPages where exactMatches < wanted && fetched < query.fetchLimit {
             var params = filters
             params["projectId"] = projectId
             params["limit"] = String(min(100, query.fetchLimit - fetched))
@@ -217,12 +218,13 @@ final class LiveVercelAPIClient: VercelAPIClient, @unchecked Sendable {
             let data = try await requestJSON(path: "/v7/deployments", query: params)
             let page = (data["deployments"]?.array ?? []).compactMap(mapRawDeployment)
             fetched += page.count
-            matches.append(contentsOf: page.filter { query.matches($0, now: now) })
+            records.append(contentsOf: page)
+            exactMatches += page.filter { query.matches($0, now: now) }.count
             let next = data["pagination"]?["next"]?.int
             if page.isEmpty || next == nil || next == until { break }
             until = next
         }
-        return Array(matches.prefix(wanted))
+        return query.select(from: records, now: now)
     }
 
     func getDeployment(id: DeploymentID, teamId: TeamID?) async throws -> VercelDeploymentSummary {

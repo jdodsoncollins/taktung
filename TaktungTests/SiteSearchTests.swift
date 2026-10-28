@@ -254,3 +254,48 @@ struct SearchModelPolicyTests {
         #expect(prompt?.components(separatedBy: "alpha").count == SearchModelPolicy.maximumSiteNames + 1)
     }
 }
+
+struct CommitTextMatcherTests {
+    private func deploy(_ message: String, state: DeploymentState = .ready) -> VercelDeploymentSummary {
+        VercelDeploymentSummary(id: message, name: "site", state: state, target: .production, createdAt: 1_000,
+                                meta: GitMeta(githubCommitRef: "main", githubCommitSha: "3f2a91c0d4e5f60718293a4b5c6d7e8f90a1b2c3",
+                                              githubCommitMessage: message))
+    }
+
+    @Test func wordFormsShareAStem() {
+        for (a, b) in [("fix", "fixes"), ("fix", "fixing"), ("update", "updated"), ("drop", "dropped"),
+                       ("release", "releases"), ("dependency", "dependencies"), ("setting", "settings")] {
+            #expect(CommitTextMatcher.stem(a) == CommitTextMatcher.stem(b), "\(a) / \(b)")
+        }
+        #expect(CommitTextMatcher.stem("status") == "status")
+        #expect(CommitTextMatcher.stem("i18n") == "i18n")
+    }
+
+    @Test func relatedWordsApplyOnlyWhenNothingMatchesExactly() {
+        let repair = deploy("Repair Web Analytics")
+        let footer = deploy("Update footer links")
+        let query = DeploymentQuery(text: "analytics fix")
+        let related = query.select(from: [footer, repair], matcher: .curated)
+        #expect(related.map(\.id) == [repair.id])
+        #expect(query.matchedRelatedWords(repair))
+
+        let exact = deploy("Fix analytics totals")
+        #expect(query.select(from: [repair, exact], matcher: .curated).map(\.id) == [exact.id])
+        #expect(!query.matchedRelatedWords(exact))
+    }
+
+    @Test func relatedMatchingKeepsTheOtherFiltersAndIgnoresFillerWords() {
+        let failed = deploy("Repaired the analytics chart", state: .error)
+        let ready = deploy("Repaired the analytics chart")
+        let query = DeploymentQuery(states: [.ready], text: "fix the analytics")
+        #expect(query.select(from: [failed, ready], matcher: .curated).map(\.id) == [ready.id])
+        #expect(DeploymentQuery(text: "fix login").select(from: [ready], matcher: .curated).isEmpty)
+    }
+
+    @Test func embeddingNeighboursWidenTheMatch() {
+        let matcher = CommitTextMatcher(neighbors: { $0 == "speedy" ? ["quick"] : [] })
+        let quick = deploy("Quick build cache")
+        #expect(DeploymentQuery(text: "speedy cache").select(from: [quick], matcher: matcher).map(\.id) == [quick.id])
+        #expect(DeploymentQuery(text: "speedy cache").select(from: [quick], matcher: .curated).isEmpty)
+    }
+}
