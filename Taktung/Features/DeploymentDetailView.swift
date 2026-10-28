@@ -117,6 +117,9 @@ struct DeploymentDetailView: View {
                             .foregroundStyle(Palette.textSecondary)
                     }
                 }
+                if let evidence = session.buildFailure, evidence.deploymentID == deployment.id {
+                    BuildFailureEvidenceView(evidence: evidence)
+                }
             } else if isFailedState(current.state) {
                 PrimaryButton(title: "Run incident summary", role: .ghost) {
                     Task { await session.runIncidentSummary() }

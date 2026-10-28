@@ -87,6 +87,31 @@ enum OnDevicePlanner {
         #endif
     }
 
+    /// One sentence explaining a failed build from a bounded, redacted excerpt.
+    /// Nil when unavailable or unsafe; the key log lines still show on every device.
+    static func explainBuildFailure(_ excerpt: BuildFailureExcerpt) async -> String? {
+        #if canImport(FoundationModels)
+        guard isAvailable, let prompt = BuildFailurePolicy.prompt(excerpt) else { return nil }
+        do {
+            let model = SystemLanguageModel.default
+            let inputTokens = try await model.tokenCount(for: prompt)
+            let instructionTokens = try await model.tokenCount(for: Instructions(BuildFailurePolicy.instructions))
+            guard inputTokens + instructionTokens + BuildFailurePolicy.responseTokens + 128 < model.contextSize,
+                  !Task.isCancelled else { return nil }
+            // A fresh session per explanation; no history carries between builds.
+            let session = LanguageModelSession(model: model, instructions: BuildFailurePolicy.instructions)
+            let response = try await session.respond(to: prompt, options: GenerationOptions(
+                samplingMode: .greedy, maximumResponseTokens: BuildFailurePolicy.responseTokens))
+            guard !Task.isCancelled else { return nil }
+            return response.content
+        } catch {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     /// Reads a Field Log request into filters. The prompt holds the request and
     /// loaded site names only; journal records never reach the model.
     static func planFieldLogSearch(query: String, siteNames: [String]) async -> FieldLogModelDraft? {

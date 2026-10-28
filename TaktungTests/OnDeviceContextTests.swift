@@ -39,6 +39,60 @@ struct OnDeviceContextTests {
         #expect(sent.first?.hasPrefix("what did I jot down while fixing checkout | ") == true)
     }
 
+    @Test func failedBuildShowsKeyLinesAndAGroundedExplanation() async {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let sent = PlannerCalls()
+        let app = AppSession(evidenceStore: LocalEvidenceStore(root: root), demoMode: false, keychain: keys,
+                             modelAvailability: { true },
+                             buildExplainer: { excerpt in
+                                 await sent.record(excerpt.text)
+                                 return "A type error stopped the build: 'title' does not exist on type 'PageProps'."
+                             },
+                             clientFactory: { _ in DemoAPIClient() })
+        _ = await app.connectWithToken("token")
+        await app.selectProject(DemoIDs.portfolio)
+        await app.runIncidentSummary()
+        let evidence = app.buildFailure
+        #expect(evidence?.deploymentID == app.incidentDeploymentId)
+        #expect(evidence?.excerpt.lines.contains { $0.hasPrefix("Type error") } == true)
+        for _ in 0..<500 where app.buildFailure?.isExplaining == true { await Task.yield() }
+        #expect(app.buildFailure?.explanation == "A type error stopped the build: 'title' does not exist on type 'PageProps'.")
+        #expect(await sent.queries == [evidence?.excerpt.text ?? ""])
+        // The Field Log keeps the heuristic only; the generated sentence stays in memory.
+        #expect(!app.recentActivity.contains { $0.detail.contains("stopped the build") })
+
+        await app.selectProject(DemoIDs.store)
+        #expect(app.buildFailure == nil)
+    }
+
+    @Test func ungroundedExplanationsAndDemoKeepOnlyTheKeyLines() async {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let app = AppSession(evidenceStore: LocalEvidenceStore(root: root), demoMode: false, keychain: keys,
+                             modelAvailability: { true },
+                             buildExplainer: { _ in "The file src/app/layout.tsx imports a missing package." },
+                             clientFactory: { _ in DemoAPIClient() })
+        _ = await app.connectWithToken("token")
+        await app.selectProject(DemoIDs.portfolio)
+        await app.runIncidentSummary()
+        for _ in 0..<500 where app.buildFailure?.isExplaining == true { await Task.yield() }
+        #expect(app.buildFailure?.explanation == nil)
+        #expect(app.buildFailure?.excerpt.lines.isEmpty == false)
+
+        let calls = PlannerCalls()
+        let demoRoot = newRoot, demoKeys = newKeychain
+        defer { demoKeys.eraseAll(); try? FileManager.default.removeItem(at: demoRoot) }
+        let demo = AppSession(evidenceStore: LocalEvidenceStore(root: demoRoot), demoMode: true, keychain: demoKeys,
+                              modelAvailability: { true },
+                              buildExplainer: { excerpt in await calls.record(excerpt.text); return nil })
+        await demo.bootstrap()
+        await demo.runIncidentSummary()
+        #expect(demo.buildFailure?.excerpt.lines.isEmpty == false)
+        #expect(demo.buildFailure?.isExplaining == false)
+        #expect(await calls.queries.isEmpty)
+    }
+
     @Test func demoAndUnavailableModelsKeepTheRules() async {
         let root = newRoot, keys = newKeychain
         defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
@@ -49,7 +103,9 @@ struct OnDeviceContextTests {
         let fromDemo = await demo.interpretFieldLogSearch("anything odd lately")
         #expect(fromDemo.interpreter == .rules)
 
-        let unavailable = AppSession(evidenceStore: LocalEvidenceStore(root: newRoot), demoMode: false, keychain: newKeychain,
+        let otherRoot = newRoot, otherKeys = newKeychain
+        defer { otherKeys.eraseAll(); try? FileManager.default.removeItem(at: otherRoot) }
+        let unavailable = AppSession(evidenceStore: LocalEvidenceStore(root: otherRoot), demoMode: false, keychain: otherKeys,
                                      modelAvailability: { false },
                                      fieldLogPlanner: { query, _ in await calls.record(query); return FieldLogModelDraft(categories: [.notes]) },
                                      clientFactory: { _ in DemoAPIClient() })

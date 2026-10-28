@@ -140,6 +140,10 @@ final class AppSession {
     @ObservationIgnored private let searchPlanner: @Sendable (String, [String]) async -> SearchModelDraft?
     // On-device context (see the section at the end of this class).
     @ObservationIgnored private let fieldLogPlanner: @Sendable (String, [String]) async -> FieldLogModelDraft?
+    @ObservationIgnored private let buildExplainer: @Sendable (BuildFailureExcerpt) async -> String?
+    @ObservationIgnored private var buildExplanationTask: Task<Void, Never>?
+    /// Key log lines, and an optional on-device sentence, for the last diagnosed failure. Memory only.
+    private(set) var buildFailure: BuildFailureEvidence?
     @ObservationIgnored private var briefTask: Task<String?, Never>?
     @ObservationIgnored private var briefRequestID: UUID?
     @ObservationIgnored private var briefRequestKey: BriefReuseCache.Key?
@@ -151,7 +155,7 @@ final class AppSession {
     private var hasBootstrapped = false
     @ObservationIgnored private let isDemoMode: Bool
     private var scopeGeneration = 0 {
-        didSet { domainSignals = nil; runtimeSignals = nil; searchedDeployments = [] }
+        didSet { domainSignals = nil; runtimeSignals = nil; searchedDeployments = []; clearOnDeviceContext() }
     }
     @ObservationIgnored private var domainSignals: (scope: InspectionScope, date: Date, unverified: Int)?
     @ObservationIgnored private var runtimeSignals: (scope: InspectionScope, date: Date, deploymentID: String, records: Int, errors: Int)?
@@ -163,6 +167,7 @@ final class AppSession {
          briefGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.brief(context: $0) },
          searchPlanner: @escaping @Sendable (String, [String]) async -> SearchModelDraft? = { await OnDevicePlanner.planSearch(query: $0, siteNames: $1) },
          fieldLogPlanner: @escaping @Sendable (String, [String]) async -> FieldLogModelDraft? = { await OnDevicePlanner.planFieldLogSearch(query: $0, siteNames: $1) },
+         buildExplainer: @escaping @Sendable (BuildFailureExcerpt) async -> String? = { await OnDevicePlanner.explainBuildFailure($0) },
          clientFactory: @escaping (String) -> any VercelAPIClient = { token in LiveVercelAPIClient(tokenProvider: { token }) }) {
         self.evidenceStore = evidenceStore
         self.isDemoMode = demoMode
@@ -172,6 +177,7 @@ final class AppSession {
         self.briefGenerator = briefGenerator
         self.searchPlanner = searchPlanner
         self.fieldLogPlanner = fieldLogPlanner
+        self.buildExplainer = buildExplainer
     }
 
     var hasLocalAccountData: Bool { evidenceScope != nil || tokenSource != nil || connection.user != nil }
@@ -679,6 +685,7 @@ final class AppSession {
                 projectId: project.id,
                 deploymentId: failed.id
             )
+            recordBuildFailure(deploymentID: failed.id, logs: logs)
         } catch {
             guard scope == scopeGeneration, selectedProjectId == project.id else { return }
             lastError = error.localizedDescription
@@ -1174,5 +1181,38 @@ final class AppSession {
             return rules
         }
         return reading
+    }
+
+    /// Key lines on every device; an on-device sentence when Apple Intelligence is
+    /// available. Generation never holds the busy flag or blocks navigation.
+    private func recordBuildFailure(deploymentID: DeploymentID, logs: [BuildLogLine]) {
+        buildExplanationTask?.cancel()
+        buildExplanationTask = nil
+        guard let excerpt = BuildFailurePolicy.excerpt(from: logs) else {
+            buildFailure = nil
+            return
+        }
+        buildFailure = BuildFailureEvidence(deploymentID: deploymentID, excerpt: excerpt)
+        guard !isDemoMode else { return }
+        refreshModelAvailability()
+        guard onDeviceAvailable, BuildFailurePolicy.prompt(excerpt) != nil else { return }
+        let scope = scopeGeneration
+        let explainer = buildExplainer
+        buildFailure?.isExplaining = true
+        buildExplanationTask = Task { [weak self] in
+            let response = await explainer(excerpt)
+            guard let self, !Task.isCancelled, scope == self.scopeGeneration,
+                  self.buildFailure?.deploymentID == deploymentID, self.buildFailure?.excerpt == excerpt else { return }
+            self.buildFailure?.isExplaining = false
+            self.buildFailure?.explanation = response.flatMap { BuildFailurePolicy.accept($0, excerpt: excerpt) }
+        }
+    }
+
+    /// Site, team, account and reconnection changes discard on-device context and
+    /// cancel its generation, so a late reply cannot land on another scope.
+    private func clearOnDeviceContext() {
+        buildExplanationTask?.cancel()
+        buildExplanationTask = nil
+        buildFailure = nil
     }
 }
