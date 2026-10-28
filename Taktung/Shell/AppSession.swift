@@ -138,6 +138,8 @@ final class AppSession {
     @ObservationIgnored private let modelAvailability: () -> Bool
     @ObservationIgnored private let briefGenerator: @Sendable (String) async -> String?
     @ObservationIgnored private let searchPlanner: @Sendable (String, [String]) async -> SearchModelDraft?
+    // On-device context (see the section at the end of this class).
+    @ObservationIgnored private let fieldLogPlanner: @Sendable (String, [String]) async -> FieldLogModelDraft?
     @ObservationIgnored private var briefTask: Task<String?, Never>?
     @ObservationIgnored private var briefRequestID: UUID?
     @ObservationIgnored private var briefRequestKey: BriefReuseCache.Key?
@@ -160,6 +162,7 @@ final class AppSession {
          modelAvailability: @escaping () -> Bool = { OnDevicePlanner.isAvailable },
          briefGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.brief(context: $0) },
          searchPlanner: @escaping @Sendable (String, [String]) async -> SearchModelDraft? = { await OnDevicePlanner.planSearch(query: $0, siteNames: $1) },
+         fieldLogPlanner: @escaping @Sendable (String, [String]) async -> FieldLogModelDraft? = { await OnDevicePlanner.planFieldLogSearch(query: $0, siteNames: $1) },
          clientFactory: @escaping (String) -> any VercelAPIClient = { token in LiveVercelAPIClient(tokenProvider: { token }) }) {
         self.evidenceStore = evidenceStore
         self.isDemoMode = demoMode
@@ -168,6 +171,7 @@ final class AppSession {
         self.modelAvailability = modelAvailability
         self.briefGenerator = briefGenerator
         self.searchPlanner = searchPlanner
+        self.fieldLogPlanner = fieldLogPlanner
     }
 
     var hasLocalAccountData: Bool { evidenceScope != nil || tokenSource != nil || connection.user != nil }
@@ -1151,5 +1155,24 @@ final class AppSession {
                 if self?.evidenceScope == scope { self?.historyStorageError = "History could not be saved. Existing records have been kept." }
             }
         }
+    }
+
+    // MARK: - On-device context: Field Log search, build explanations, Field Log summaries, Spotlight
+
+    /// Rules first; Apple Intelligence reads only Field Log requests the rules cannot place.
+    /// The model sees the request and loaded site names, never the journal.
+    func interpretFieldLogSearch(_ text: String) async -> FieldLogInterpretation {
+        let rules = FieldLogRules.parse(text, projects: projects)
+        guard rules.needsModel, !isDemoMode else { return rules }
+        refreshModelAvailability()
+        guard onDeviceAvailable else { return rules }
+        let scope = scopeGeneration
+        let account = evidenceScope
+        let draft = await fieldLogPlanner(text, projects.map(siteTitle))
+        guard !Task.isCancelled, scope == scopeGeneration, account == evidenceScope, let draft,
+              let reading = FieldLogModelPolicy.interpretation(draft, query: text, rules: rules, projects: projects) else {
+            return rules
+        }
+        return reading
     }
 }

@@ -12,14 +12,25 @@ struct ActivityView: View {
     @State private var visibleIDs = Set<String>()
     @State private var initialized = false
     @State private var atTop = true
+    /// A submitted search read into filters. Typing without submitting keeps the literal match.
+    @State private var interpretation: FieldLogInterpretation?
+    @State private var interpretedText = ""
+    @State private var interpreting = false
+    @State private var interpretTask: Task<Void, Never>?
 
     private var matching: [ActivityItem] {
-        fieldLogEntries(session.recentActivity, projectID: session.selectedProjectId,
-                        scope: scope, filter: filter, search: query)
+        if let interpretation {
+            return fieldLogEntries(session.recentActivity, projectID: session.selectedProjectId,
+                                   scope: scope, filter: filter, query: interpretation.query)
+        }
+        return fieldLogEntries(session.recentActivity, projectID: session.selectedProjectId,
+                               scope: scope, filter: filter, search: query)
     }
     private var items: [ActivityItem] { matching.filter { visibleIDs.contains($0.id) } }
     private var pendingCount: Int { matching.filter { !visibleIDs.contains($0.id) }.count }
-    private var hasFilters: Bool { filter != .all || !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var hasFilters: Bool {
+        filter != .all || interpretation != nil || !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -72,7 +83,11 @@ struct ActivityView: View {
             .onChange(of: session.recentActivity.map(\.id)) { _, _ in
                 if atTop { revealNewEntries() }
             }
-            .onChange(of: query) { _, _ in showLatest(proxy) }
+            .onChange(of: query) { _, value in
+                if value != interpretedText { clearInterpretation() }
+                showLatest(proxy)
+            }
+            .onChange(of: interpretation) { _, _ in showLatest(proxy) }
             .onChange(of: scope) { _, _ in showLatest(proxy) }
             .onChange(of: filter) { _, _ in showLatest(proxy) }
             .onChange(of: session.selectedProjectId) { _, _ in showLatest(proxy) }
@@ -101,7 +116,8 @@ struct ActivityView: View {
                 .accessibilityIdentifier("takt.history.note")
             }
         }
-        .searchable(text: $query, prompt: "Search field log")
+        .searchable(text: $query, prompt: "Search, or ask in your own words")
+        .onSubmit(of: .search) { interpret() }
         .accessibilityIdentifier(AccessibilityIDs.tabActivity)
         .confirmationDialog("Clear this account's activity for the current team?", isPresented: $confirmClear, titleVisibility: .visible) {
             Button("Clear activity", role: .destructive) {
@@ -146,8 +162,65 @@ struct ActivityView: View {
                 HStack(spacing: Spacing.md) { scopePicker; filterPicker; Spacer(minLength: 0) }
                 VStack(alignment: .leading, spacing: 0) { scopePicker; filterPicker }
             }
+            searchReading
         }
         .padding(.vertical, Spacing.sm)
+    }
+
+    @ViewBuilder private var searchReading: some View {
+        if interpreting {
+            ProgressView("Reading your search…").font(.footnote)
+        } else if let interpretation {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                let filters = interpretation.query.filters
+                if !filters.isEmpty {
+                    ChipFlowLayout {
+                        ForEach(filters) { applied in
+                            RemovableChip(label: applied.label) { remove(applied.kind) }
+                        }
+                    }
+                    .accessibilityIdentifier("takt.history.search.filters")
+                }
+                if interpretation.interpreter == .appleIntelligence {
+                    Label("Interpreted with Apple Intelligence on this device", systemImage: "sparkle")
+                        .font(.footnote).foregroundStyle(Palette.textSecondary)
+                }
+            }
+        }
+    }
+
+    private func interpret() {
+        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        interpretTask?.cancel()
+        guard !text.isEmpty else { clearInterpretation(); return }
+        interpretedText = query
+        interpreting = true
+        interpretTask = Task {
+            let reading = await session.interpretFieldLogSearch(text)
+            guard !Task.isCancelled, query == interpretedText else { return }
+            interpretation = reading
+            interpreting = false
+        }
+    }
+
+    private func remove(_ kind: FieldLogQueryFilter.Kind) {
+        guard var reading = interpretation else { return }
+        reading.query = reading.query.removing(kind)
+        if reading.query.hasFilters {
+            interpretation = reading
+        } else {
+            // Nothing left to filter by: start over with an empty field.
+            query = ""
+            clearInterpretation()
+        }
+    }
+
+    private func clearInterpretation() {
+        interpretTask?.cancel()
+        interpretTask = nil
+        interpretation = nil
+        interpretedText = ""
+        interpreting = false
     }
 
     private var scopePicker: some View {
@@ -181,7 +254,7 @@ struct ActivityView: View {
             Text(hasFilters ? "Try another search or reset your filters." : "Checks, comparisons, actions, and notes will appear here.")
         } actions: {
             if hasFilters {
-                Button("Reset filters") { query = ""; filter = .all }
+                Button("Reset filters") { query = ""; filter = .all; clearInterpretation() }
                     .accessibilityIdentifier("takt.history.reset")
             }
         }
