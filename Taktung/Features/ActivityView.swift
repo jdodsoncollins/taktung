@@ -312,7 +312,8 @@ private struct FieldLogDigestCard: View {
         let entries = digest.entries.filter { available.contains($0.id) }
         VStack(alignment: .leading, spacing: Spacing.sm) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Last 7 days · \(digest.scopeLabel)").font(.headline).foregroundStyle(Palette.text)
+                // The counts line already says "Last 7 days"; the heading names the scope.
+                Text(digest.scopeLabel).font(.headline).foregroundStyle(Palette.text)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: Spacing.sm)
                 Button(action: dismiss) {
