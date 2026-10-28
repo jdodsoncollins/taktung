@@ -124,6 +124,24 @@ struct OnDeviceContextTests {
         #expect(app.fieldLogDigest == nil)
     }
 
+    @Test func searchSwitchOffKeepsFieldLogSearchOnTheRules() async {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let calls = PlannerCalls()
+        let app = AppSession(evidenceStore: LocalEvidenceStore(root: root), demoMode: false, keychain: keys,
+                             modelAvailability: { true },
+                             fieldLogPlanner: { query, _ in await calls.record(query); return FieldLogModelDraft(categories: [.notes]) },
+                             clientFactory: { _ in DemoAPIClient() })
+        _ = await app.connectWithToken("token")
+        let off = await app.interpretFieldLogSearch("what did I jot down while fixing checkout", allowModel: false)
+        #expect(off.interpreter == .rules)
+        #expect(off.query.text == "jot down while fixing checkout")
+        #expect(await calls.queries.isEmpty)
+        let on = await app.interpretFieldLogSearch("what did I jot down while fixing checkout", allowModel: true)
+        #expect(on.interpreter == .appleIntelligence)
+        #expect(await calls.queries.count == 1)
+    }
+
     @Test func demoAndUnavailableModelsKeepTheRules() async {
         let root = newRoot, keys = newKeychain
         defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }

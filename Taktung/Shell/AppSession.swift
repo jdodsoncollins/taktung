@@ -1294,11 +1294,12 @@ final class AppSession {
 
     // MARK: - On-device context: Field Log search, build explanations, Field Log summaries, Spotlight
 
-    /// Rules first; Apple Intelligence reads only Field Log requests the rules cannot place.
+    /// Rules first; Apple Intelligence reads only Field Log requests the rules cannot place,
+    /// and only while Search's Apple Intelligence switch allows it.
     /// The model sees the request and loaded site names, never the journal.
-    func interpretFieldLogSearch(_ text: String) async -> FieldLogInterpretation {
+    func interpretFieldLogSearch(_ text: String, allowModel: Bool = true) async -> FieldLogInterpretation {
         let rules = FieldLogRules.parse(text, projects: projects)
-        guard rules.needsModel, !isDemoMode else { return rules }
+        guard rules.needsModel, allowModel, !isDemoMode else { return rules }
         refreshModelAvailability()
         guard onDeviceAvailable else { return rules }
         let scope = scopeGeneration

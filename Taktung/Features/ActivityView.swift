@@ -18,6 +18,8 @@ struct ActivityView: View {
     @State private var interpreting = false
     @State private var interpretTask: Task<Void, Never>?
     @State private var openedEntry: ActivityItem?
+    /// The Search page's Apple Intelligence switch also governs Field Log search.
+    @AppStorage(SearchPreferences.appleIntelligenceKey) private var useAppleIntelligence = true
 
     private var matching: [ActivityItem] {
         if let interpretation {
@@ -222,7 +224,7 @@ struct ActivityView: View {
         interpretedText = query
         interpreting = true
         interpretTask = Task {
-            let reading = await session.interpretFieldLogSearch(text)
+            let reading = await session.interpretFieldLogSearch(text, allowModel: useAppleIntelligence)
             guard !Task.isCancelled, query == interpretedText else { return }
             interpretation = reading
             interpreting = false
