@@ -20,11 +20,15 @@ final class AppSession {
     var connection: VercelConnection = .empty()
     var projects: [VercelProject] = []
     var selectedProjectId: ProjectID?
-    var deployments: [VercelDeploymentSummary] = []
+    var deployments: [VercelDeploymentSummary] = [] {
+        didSet { if oldValue != deployments { scheduleSpotlightSync() } }
+    }
     var selectedDeployment: VercelDeploymentSummary?
-    var recentActivity: [ActivityItem] = []
+    var recentActivity: [ActivityItem] = [] {
+        didSet { if oldValue != recentActivity { scheduleSpotlightSync() } }
+    }
     private(set) var evidenceScope: EvidenceScope? {
-        didSet { if oldValue != evidenceScope { recentSearches = []; sinceLastVisit = nil } }
+        didSet { if oldValue != evidenceScope { recentSearches = []; sinceLastVisit = nil; scheduleSpotlightSync(immediately: true) } }
     }
     /// Deployments returned by Search for the selected site. Detail, inspection
     /// and confirmed actions accept them like loaded deployments until the scope changes.
@@ -147,6 +151,24 @@ final class AppSession {
     @ObservationIgnored private(set) var visitDigestTask: Task<Void, Never>?
     @ObservationIgnored private var backgroundedAt: Date?
     @ObservationIgnored private var visitSaveTask: Task<Void, Never>?
+    // On-device context (see the section at the end of this class).
+    @ObservationIgnored private let fieldLogPlanner: @Sendable (String, [String]) async -> FieldLogModelDraft?
+    @ObservationIgnored private let buildExplainer: @Sendable (BuildFailureExcerpt) async -> String?
+    @ObservationIgnored private var buildExplanationTask: Task<Void, Never>?
+    /// Key log lines, and an optional on-device sentence, for the last diagnosed failure. Memory only.
+    private(set) var buildFailure: BuildFailureEvidence?
+    @ObservationIgnored private let fieldLogSummarizer: @Sendable (String) async -> String?
+    @ObservationIgnored private var digestTask: Task<Void, Never>?
+    /// The last seven days of the Field Log, counted, with an optional on-device summary. Memory only.
+    private(set) var fieldLogDigest: FieldLogDigest?
+    @ObservationIgnored private let spotlight: any SpotlightIndexing
+    @ObservationIgnored private let spotlightSettings: () -> SpotlightSettings
+    @ObservationIgnored private var spotlightTask: Task<Void, Never>?
+    @ObservationIgnored private var spotlightRevision = 0
+    /// A Field Log entry opened from Spotlight, consumed by the Field Log.
+    var spotlightEntryID: String?
+    /// A deployment opened from Spotlight, consumed by Deploys once its site is selected.
+    var focusedDeploymentID: DeploymentID?
     @ObservationIgnored private var briefTask: Task<String?, Never>?
     @ObservationIgnored private var briefRequestID: UUID?
     @ObservationIgnored private var briefRequestKey: BriefReuseCache.Key?
@@ -161,6 +183,7 @@ final class AppSession {
         didSet {
             domainSignals = nil; runtimeSignals = nil; searchedDeployments = []
             visitDigestTask?.cancel(); sinceLastVisit = nil; isGeneratingVisitDigest = false
+            clearOnDeviceContext()
         }
     }
     @ObservationIgnored private var domainSignals: (scope: InspectionScope, date: Date, unverified: Int)?
@@ -173,6 +196,11 @@ final class AppSession {
          briefGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.brief(context: $0) },
          searchPlanner: @escaping @Sendable (String, [String]) async -> SearchModelDraft? = { await OnDevicePlanner.planSearch(query: $0, siteNames: $1) },
          visitDigestGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.visitDigest(facts: $0) },
+         fieldLogPlanner: @escaping @Sendable (String, [String]) async -> FieldLogModelDraft? = { await OnDevicePlanner.planFieldLogSearch(query: $0, siteNames: $1) },
+         buildExplainer: @escaping @Sendable (BuildFailureExcerpt) async -> String? = { await OnDevicePlanner.explainBuildFailure($0) },
+         fieldLogSummarizer: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.summarizeFieldLog(prompt: $0) },
+         spotlight: any SpotlightIndexing = SpotlightIndexer.shared,
+         spotlightSettings: @escaping () -> SpotlightSettings = { .current },
          clientFactory: @escaping (String) -> any VercelAPIClient = { token in LiveVercelAPIClient(tokenProvider: { token }) }) {
         self.evidenceStore = evidenceStore
         self.isDemoMode = demoMode
@@ -182,6 +210,11 @@ final class AppSession {
         self.briefGenerator = briefGenerator
         self.searchPlanner = searchPlanner
         self.visitDigestGenerator = visitDigestGenerator
+        self.fieldLogPlanner = fieldLogPlanner
+        self.buildExplainer = buildExplainer
+        self.fieldLogSummarizer = fieldLogSummarizer
+        self.spotlight = spotlight
+        self.spotlightSettings = spotlightSettings
     }
 
     var hasLocalAccountData: Bool { evidenceScope != nil || tokenSource != nil || connection.user != nil }
@@ -571,6 +604,9 @@ final class AppSession {
               selectedProjectId == projectID,
               route.matches(accountID: connection.user?.id, teamID: connection.selectedTeamId) else { return }
         if route.action == .checkHealth { await runOpsBrief() }
+        if let deploymentID = route.deploymentID, knownDeployments.contains(where: { $0.id == deploymentID }) {
+            focusedDeploymentID = deploymentID
+        }
     }
 
     /// Rules first; Apple Intelligence reads only requests the rules cannot place,
@@ -776,6 +812,7 @@ final class AppSession {
                 projectId: project.id,
                 deploymentId: failed.id
             )
+            recordBuildFailure(deploymentID: failed.id, logs: logs)
         } catch {
             guard scope == scopeGeneration, selectedProjectId == project.id else { return }
             lastError = error.localizedDescription
@@ -1253,5 +1290,134 @@ final class AppSession {
                 if self?.evidenceScope == scope { self?.historyStorageError = "History could not be saved. Existing records have been kept." }
             }
         }
+    }
+
+    // MARK: - On-device context: Field Log search, build explanations, Field Log summaries, Spotlight
+
+    /// Rules first; Apple Intelligence reads only Field Log requests the rules cannot place.
+    /// The model sees the request and loaded site names, never the journal.
+    func interpretFieldLogSearch(_ text: String) async -> FieldLogInterpretation {
+        let rules = FieldLogRules.parse(text, projects: projects)
+        guard rules.needsModel, !isDemoMode else { return rules }
+        refreshModelAvailability()
+        guard onDeviceAvailable else { return rules }
+        let scope = scopeGeneration
+        let account = evidenceScope
+        let draft = await fieldLogPlanner(text, projects.map(siteTitle))
+        guard !Task.isCancelled, scope == scopeGeneration, account == evidenceScope, let draft,
+              let reading = FieldLogModelPolicy.interpretation(draft, query: text, rules: rules, projects: projects) else {
+            return rules
+        }
+        return reading
+    }
+
+    /// Key lines on every device; an on-device sentence when Apple Intelligence is
+    /// available. Generation never holds the busy flag or blocks navigation.
+    private func recordBuildFailure(deploymentID: DeploymentID, logs: [BuildLogLine]) {
+        buildExplanationTask?.cancel()
+        buildExplanationTask = nil
+        guard let excerpt = BuildFailurePolicy.excerpt(from: logs) else {
+            buildFailure = nil
+            return
+        }
+        buildFailure = BuildFailureEvidence(deploymentID: deploymentID, excerpt: excerpt)
+        guard !isDemoMode else { return }
+        refreshModelAvailability()
+        guard onDeviceAvailable, BuildFailurePolicy.prompt(excerpt) != nil else { return }
+        let scope = scopeGeneration
+        let explainer = buildExplainer
+        buildFailure?.isExplaining = true
+        buildExplanationTask = Task { [weak self] in
+            let response = await explainer(excerpt)
+            guard let self, !Task.isCancelled, scope == self.scopeGeneration,
+                  self.buildFailure?.deploymentID == deploymentID, self.buildFailure?.excerpt == excerpt else { return }
+            self.buildFailure?.isExplaining = false
+            self.buildFailure?.explanation = response.flatMap { BuildFailurePolicy.accept($0, excerpt: excerpt) }
+        }
+    }
+
+    /// Site, team, account and reconnection changes discard on-device context and
+    /// cancel its generation, so a late reply cannot land on another scope.
+    private func clearOnDeviceContext() {
+        buildExplanationTask?.cancel()
+        buildExplanationTask = nil
+        buildFailure = nil
+        dismissFieldLogDigest()
+    }
+
+    /// Counts the last seven days on every device and, with Apple Intelligence,
+    /// summarizes a bounded, redacted selection of those entries.
+    func summarizeFieldLog(allSites: Bool) {
+        digestTask?.cancel()
+        digestTask = nil
+        guard let account = evidenceScope else { return }
+        let projectID = allSites ? nil : selectedProjectId
+        let label = allSites || selectedProject == nil ? "All sites" : selectedProject.map(siteTitle) ?? "This site"
+        let digest = FieldLogDigestPolicy.digest(entries: recentActivity, projectID: projectID, scopeLabel: label)
+        fieldLogDigest = digest
+        guard !isDemoMode else { return }
+        refreshModelAvailability()
+        guard onDeviceAvailable, let prompt = FieldLogDigestPolicy.prompt(digest, includeSite: projectID == nil) else { return }
+        let scope = scopeGeneration
+        let summarizer = fieldLogSummarizer
+        fieldLogDigest?.isSummarizing = true
+        digestTask = Task { [weak self] in
+            let response = await summarizer(prompt)
+            guard let self, !Task.isCancelled, scope == self.scopeGeneration, account == self.evidenceScope,
+                  self.fieldLogDigest?.id == digest.id else { return }
+            self.fieldLogDigest?.isSummarizing = false
+            self.fieldLogDigest?.summary = response.flatMap { FieldLogDigestPolicy.accept($0, prompt: prompt) }
+        }
+    }
+
+    func dismissFieldLogDigest() {
+        digestTask?.cancel()
+        digestTask = nil
+        fieldLogDigest = nil
+    }
+
+    /// Spotlight follows the person's settings, the current account and team, and
+    /// never Demo. Frequent changes are coalesced; scope changes apply at once.
+    private func scheduleSpotlightSync(immediately: Bool = false) {
+        spotlightTask?.cancel()
+        spotlightTask = Task { [weak self] in
+            if !immediately {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+            }
+            await self?.syncSpotlight()
+        }
+    }
+
+    /// Recent deployments for the selected site and the person's own notes, when
+    /// each is turned on. Everything is removed on disconnect or account and team changes.
+    func syncSpotlight() async {
+        spotlightRevision += 1
+        let settings = spotlightSettings()
+        let scope = isDemoMode ? nil : evidenceScope
+        var update: SpotlightState.Deployments = settings.deployments ? .keep : .remove
+        if settings.deployments, let scope, connection.isConnected, let project = selectedProject, !deployments.isEmpty {
+            update = .replace(projectID: project.id,
+                              items: SpotlightContent.deployments(deployments, project: project, scope: scope))
+        }
+        let notes = settings.notes ? scope.map { SpotlightContent.notes(recentActivity, scope: $0) } : nil
+        await spotlight.apply(SpotlightState(revision: spotlightRevision, scope: scope, deployments: update, notes: notes))
+    }
+
+    /// Opens a Spotlight result: a note in the Field Log, or a deployment in Deploys.
+    func openSpotlightItem(identifier: String) {
+        if let itemID = SpotlightContent.noteItemID(identifier, scope: evidenceScope) {
+            if recentActivity.contains(where: { $0.id == itemID }) { spotlightEntryID = itemID }
+            TaktRouter.open(.activity)
+            return
+        }
+        guard !isDemoMode, let scope = evidenceScope,
+              let record = SpotlightCatalogStore.load()?.deployments.first(where: { identifier == $0.id || identifier.hasSuffix("." + $0.id) }),
+              record.accountID == scope.accountID, record.teamID == scope.teamID else {
+            TaktRouter.open(.home)
+            return
+        }
+        TaktRouter.shared.enqueue(.init(section: .deploys, projectID: record.projectID, accountID: record.accountID,
+                                        teamID: record.teamID, deploymentID: record.id))
     }
 }

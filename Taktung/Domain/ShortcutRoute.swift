@@ -13,6 +13,8 @@ struct ShortcutRoute: Identifiable, Equatable, Sendable {
     var projectID: String?
     var accountID: String?
     var teamID: String?
+    /// A deployment to open once its site is selected (Spotlight).
+    var deploymentID: String?
 
     func matches(accountID: String?, teamID: String?) -> Bool {
         self.accountID == nil || (self.accountID == accountID && self.teamID == teamID)

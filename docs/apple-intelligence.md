@@ -1,12 +1,12 @@
 # Apple Intelligence brief lifecycle
 
-Taktung uses Apple Intelligence to rewrite a compact deterministic site brief. It never supplies deployment actions or replaces the evidence calculation. The headline, confidence, next steps and field provenance remain heuristic. Diagnose remains available without an on-device model; Search's model chrome follows actual availability outside Demo.
+Taktung uses Apple Intelligence to rewrite a compact deterministic site brief. It never supplies deployment actions or replaces the evidence calculation. The headline, confidence, next steps and field provenance remain heuristic. Diagnose remains available without an on-device model. Search works on every device; its Apple Intelligence badge and switch appear only when the model is available, or in Demo for screenshots.
 
 Availability uses `SystemLanguageModel.default.availability`, refreshed on foreground activation and before each check. An unavailable model leaves the heuristic in place. Demo summaries remain deterministic even on capable hardware.
 
 ## Bounded model work
 
-`BriefModelPolicy` rejects secret-like evidence and limits the snapshot to 2,048 UTF-8 bytes on scalar boundaries. `OnDevicePlanner` measures prompt and instruction tokens using the model's actual tokenizer, then verifies that input plus the 192-token response ceiling and 128-token reserve fit the reported context size. Each generation uses a fresh `LanguageModelSession` and greedy sampling. No accumulated chat history, full log transcript, journal or environment values enter the prompt.
+`BriefModelPolicy` rejects secret-like evidence and limits the snapshot to 2,048 UTF-8 bytes on scalar boundaries. `OnDevicePlanner` measures prompt and instruction tokens using the model's actual tokenizer, then verifies that input plus the 192-token response ceiling and 128-token reserve fit the reported context size. Each generation uses a fresh `LanguageModelSession` and greedy sampling. No accumulated chat history enters a prompt. Build-log and Field Log text may enter only as bounded, redacted excerpts selected by deterministic code (see [on-device context](on-device-context.md)); full log transcripts, runtime log records and environment values never do.
 
 Accepted output is a single line of at most 45 words and 480 characters, ends with sentence punctuation, and passes the existing secret/redaction checks. Invalid or failed responses retain the heuristic. This is a format/privacy gate, not a guarantee that a model can never misstate evidence; the deterministic evidence and provenance remain visible.
 

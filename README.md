@@ -28,10 +28,11 @@ Version **1.8.1 (47) is Waiting for App Store Review** and available in internal
 | **Web Analytics** | Visitors, page views, daily traffic and pages/referrers/countries/devices for the selected site; completed UTC reporting windows and honest access/plan states |
 | **Logs** | Search, timestamps, errors-only filter and redacted copy/share for up to 500 build lines; bounded runtime stream for one deployment |
 | **Visual comparison** | Fresh WebKit page captures, reveal slider, side-by-side review, and saved route baselines with commit/time provenance |
-| **History** | Persistent device history, site filters, search, notes, entry detail, and text export; isolated by account and team |
+| **History** | Persistent device history, site filters, notes, entry detail, and text export; isolated by account and team. Search in plain language (“failed checks this week”, “notes about checkout”) and summarize the last 7 days, with counts on every device |
 | **Home Screen widgets** | Small, medium and large deployment status/counts with recent activity, native Edit Widget project filter, All projects by default, system appearance |
 | **Siri / Shortcuts** | Fresh deployment status with spoken/composable output, optional project filters, project inspection, site-health explanation and direct navigation |
-| **Incident summary** | Deterministic diagnosis from logs, env presence, last success |
+| **Incident summary** | Deterministic diagnosis from logs, env presence, last success, with the key redacted log lines; an optional on-device sentence explains them |
+| **Spotlight** | Opt-in recent deployments and Field Log notes in system search, removed on switch off, team change or disconnect |
 | **Env drift** | Names and targets only — **never secret values** |
 | **READY poll** | After mutators, Activity records READY only when Vercel confirms |
 | **Tip Jar** | Optional repeatable Apple tips in Settings; no feature unlocks, backend or saved purchase history |
@@ -49,6 +50,7 @@ Version **1.8.1 (47) is Waiting for App Store Review** and available in internal
 - Deployment success is only claimed when Vercel reports **READY**; promote and rollback also verify the production target
 - Site changes invalidate pending confirmations and stale deployment responses
 - Build logs redact credential assignments before display or analysis
+- The on-device model sees build-log or Field Log text only as bounded, redacted excerpts; never runtime logs or env values
 
 ### Control plane
 
