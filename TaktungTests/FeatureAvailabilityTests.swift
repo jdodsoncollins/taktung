@@ -61,12 +61,12 @@ struct FeatureAvailabilityTests {
         #expect(session.canDiagnose)
     }
 
-    @Test @MainActor func searchFollowsModelOrDemoAvailability() {
+    @Test @MainActor func searchModelControlsFollowModelOrDemoAvailability() {
         let session = isolatedSession()
         session.onDeviceAvailable = false
-        #expect(session.showsSearch == DemoMode.isEnabled)
+        #expect(session.showsSearchModelControls == DemoMode.isEnabled)
         session.onDeviceAvailable = true
-        #expect(session.showsSearch)
+        #expect(session.showsSearchModelControls)
     }
 
     @Test @MainActor func availabilityRefreshHandlesDownloadAndDisableWithoutRelaunch() {
@@ -74,14 +74,14 @@ struct FeatureAvailabilityTests {
         let session = AppSession(demoMode: false, modelAvailability: { available })
         session.refreshModelAvailability()
         #expect(!session.onDeviceAvailable)
-        #expect(!session.showsSearch)
+        #expect(!session.showsSearchModelControls)
         available = true
         session.refreshModelAvailability()
         #expect(session.onDeviceAvailable)
-        #expect(session.showsSearch)
+        #expect(session.showsSearchModelControls)
         available = false
         session.refreshModelAvailability()
-        #expect(!session.showsSearch)
+        #expect(!session.showsSearchModelControls)
     }
 
     @Test @MainActor func openingAnotherWindowKeepsTheCurrentSelection() async {

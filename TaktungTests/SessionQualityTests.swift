@@ -346,6 +346,10 @@ struct SessionQualityTests {
         #expect(read.interpreter == .appleIntelligence)
         #expect(read.plan == .deployments(DeploymentQuery(states: [.ready], window: .lastHours(12))))
         #expect(await calls.queries == ["successful deploys while I slept"])
+        // With the Search page's switch off, the rules answer alone.
+        let rulesOnly = await app.interpretSearch("successful deploys while I slept", allowModel: false)
+        #expect(rulesOnly.interpreter == .rules)
+        #expect(await calls.queries.count == 1)
     }
 
     @Test @MainActor func recentSearchesStayInMemoryAndSkipSecrets() async {

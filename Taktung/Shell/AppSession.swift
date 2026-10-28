@@ -67,7 +67,9 @@ final class AppSession {
         projects.first { $0.id == selectedProjectId }
     }
 
-    var showsSearch: Bool { onDeviceAvailable || isDemoMode }
+    /// Search works on every device; the Apple Intelligence badge and switch
+    /// appear only where the model can run, or in demo for screenshots.
+    var showsSearchModelControls: Bool { onDeviceAvailable || isDemoMode }
 
     /// Loaded deployments plus Search results for the same site and scope.
     var knownDeployments: [VercelDeploymentSummary] {
@@ -553,10 +555,11 @@ final class AppSession {
         if route.action == .checkHealth { await runOpsBrief() }
     }
 
-    /// Rules first; Apple Intelligence reads only requests the rules cannot place.
-    func interpretSearch(_ text: String) async -> SiteSearchInterpretation {
+    /// Rules first; Apple Intelligence reads only requests the rules cannot place,
+    /// and only while the Search page's switch allows it.
+    func interpretSearch(_ text: String, allowModel: Bool = true) async -> SiteSearchInterpretation {
         let rules = planSiteSearch(text, projects: projects, selectedProjectID: selectedProjectId)
-        guard rules.needsModel, !isDemoMode else { return rules }
+        guard rules.needsModel, allowModel, !isDemoMode else { return rules }
         refreshModelAvailability()
         guard onDeviceAvailable else { return rules }
         let scope = scopeGeneration

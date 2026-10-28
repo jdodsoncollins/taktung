@@ -37,7 +37,7 @@ Version **1.8.1 (47) is Waiting for App Store Review** and available in internal
 | **Tip Jar** | Optional repeatable Apple tips in Settings; no feature unlocks, backend or saved purchase history |
 | **Auth** | Personal access token (Keychain). OAuth PKCE support is planned |
 | **Demo** | Screenshot fixture path. Off unless `TAKT_DEMO_MODE` is set. Never mixed with live Vercel |
-| **Search** | Plain-language deployment search for the selected site (“successful deploys this week”, “last failed preview on main”) as live, read-only Vercel requests; site lookup and the env check. Apple Intelligence reads phrasing the built-in rules don't recognise. Visible when Apple Intelligence is available, or in demo for screenshots |
+| **Search** | Plain-language deployment search for the selected site (“successful deploys this week”, “last failed preview on main”) as live, read-only Vercel requests; site lookup and the env check. Available on every device. Where Apple Intelligence can run, it reads phrasing the built-in rules don't recognise, behind an on/off switch on the Search page |
 | **UI** | SwiftUI, iOS 27.1 SDK, adaptive split workspaces, Liquid Glass chrome, opaque adaptive neutral content, with persistent System / Light / Dark appearance |
 
 ### Safety rules

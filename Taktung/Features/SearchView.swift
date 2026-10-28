@@ -3,6 +3,7 @@ import SwiftUI
 struct SearchView: View {
     @Environment(AppSession.self) private var session
     @Environment(\.dynamicTypeSize) private var typeSize
+    @AppStorage(SearchPreferences.appleIntelligenceKey) private var useAppleIntelligence = true
     @State private var query = ""
     @State private var submittedQuery = ""
     @State private var phase: SearchPhase = .idle
@@ -205,6 +206,7 @@ struct SearchView: View {
 
     private var suggestions: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
+            if session.showsSearchModelControls { intelligenceBadge }
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 Text("Quick searches").font(.headline)
                 ForEach(SearchPrompts.examples(site: session.selectedProject.map(siteTitle)), id: \.self) { example in
@@ -230,9 +232,36 @@ struct SearchView: View {
                     }
                 }
             }
-            Text("Ask in your own words, like “last successful deploy on main” or “failed preview builds yesterday”. Deployment searches are read-only Vercel requests for the selected site. Apple Intelligence reads unfamiliar phrasing on this device.")
-                .font(.footnote).foregroundStyle(Palette.textSecondary)
+            Text(hint).font(.footnote).foregroundStyle(Palette.textSecondary)
         }
+    }
+
+    /// Without Apple Intelligence, or with the switch off, the built-in rules
+    /// answer on their own.
+    private var intelligenceBadge: some View {
+        Toggle(isOn: $useAppleIntelligence) {
+            Label {
+                Text("Apple Intelligence used for deeper searching")
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "sparkle").imageScale(.small).foregroundStyle(Palette.accent)
+            }
+            .font(.footnote).foregroundStyle(Palette.textSecondary)
+        }
+        .controlSize(.mini)
+        .tint(Palette.accent)
+        .padding(.horizontal, Spacing.md).padding(.vertical, Spacing.xs)
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radii.button, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radii.button, style: .continuous).strokeBorder(Palette.border, lineWidth: 0.5))
+        .accessibilityHint("When on, Apple Intelligence on this device reads phrasing the built-in rules don't recognise")
+        .accessibilityIdentifier("takt.search.appleIntelligence")
+    }
+
+    private var hint: String {
+        let base = "Ask in your own words, like “last successful deploy on main” or “failed preview builds yesterday”. Deployment searches are read-only Vercel requests for the selected site."
+        return session.showsSearchModelControls && useAppleIntelligence
+            ? base + " Apple Intelligence reads unfamiliar phrasing on this device."
+            : base
     }
 
     private func run(_ text: String? = nil) {
@@ -245,7 +274,7 @@ struct SearchView: View {
         searchTask?.cancel()
         phase = .interpreting
         searchTask = Task {
-            let interpretation = await session.interpretSearch(text)
+            let interpretation = await session.interpretSearch(text, allowModel: useAppleIntelligence)
             guard !Task.isCancelled, submittedQuery == text else { return }
             switch interpretation.plan {
             case .deployments(let q): await load(q, interpreter: interpretation.interpreter)
@@ -364,6 +393,11 @@ private struct RemovableFilterChip: View {
         .accessibilityLabel("\(label) filter")
         .accessibilityHint("Removes this filter and searches again")
     }
+}
+
+enum SearchPreferences {
+    /// On by default; only consulted where Apple Intelligence can run.
+    static let appleIntelligenceKey = "takt.search.appleIntelligence"
 }
 
 enum SearchPrompts {

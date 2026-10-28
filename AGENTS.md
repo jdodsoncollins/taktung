@@ -13,8 +13,11 @@ codebase and from MobileflowRN.
 - Mutating actions: allow-list + ConfirmationPolicy + hard confirm.
   READY only after poll.
 - Liquid Glass on navigation chrome only; content = opaque HIG surfaces.
-- Heuristic Diagnose always works. Hide Search LLM chrome when
-  `OnDevicePlanner.isAvailable` is false, except in demo mode (screenshots).
+- Heuristic Diagnose always works. Search shows on every device; without
+  Apple Intelligence (or with the Search page's switch off) the rules answer
+  alone. Show the "Apple Intelligence used for deeper searching" badge and
+  switch only when `OnDevicePlanner.isAvailable`, or in demo mode (screenshots).
+  The Search tab uses the magnifying glass, not the sparkle.
 - Search: rules (`SearchRules`) first; the on-device model only reads words the
   rules leave unplaced, and `SearchModelPolicy` drops any branch/commit/site not
   literally in the request. Deployment searches are one read-only
