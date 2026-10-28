@@ -5,6 +5,7 @@ struct DeploymentsView: View {
     @State private var filter: DeploymentListFilter = .all
     @State private var target: DeploymentTargetFilter = .all
     @State private var query = ""
+    @State private var opened: VercelDeploymentSummary?
 
     var body: some View {
         let counts = countDeploymentsByFilter(session.deployments)
@@ -57,6 +58,14 @@ struct DeploymentsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ChromeToolbar() }
         .searchable(text: $query, prompt: "Commit, branch, SHA or deployment URL")
+        .navigationDestination(item: $opened) { DeploymentDetailView(deployment: $0) }
+        .task(id: session.focusedDeploymentID) {
+            // A deployment opened from Spotlight, after its site was selected.
+            guard let id = session.focusedDeploymentID,
+                  let deployment = session.knownDeployments.first(where: { $0.id == id }) else { return }
+            session.focusedDeploymentID = nil
+            opened = deployment
+        }
         .refreshable {
             if let id = session.selectedProjectId {
                 await session.loadDeployments(id)

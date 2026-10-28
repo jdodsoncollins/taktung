@@ -7,6 +7,8 @@ struct SettingsView: View {
     @State private var token = ""
     @State private var confirmDisconnect = false
     @State private var statusMessage: String?
+    @AppStorage(SpotlightSettings.deploymentsKey) private var spotlightDeployments = false
+    @AppStorage(SpotlightSettings.notesKey) private var spotlightNotes = false
 
     var body: some View {
         List {
@@ -71,10 +73,25 @@ struct SettingsView: View {
             if session.onDeviceAvailable {
                 Section("On-device summaries") {
                     Label("Apple Intelligence available", systemImage: "apple.intelligence")
-                    Text("Site health summaries use only the loaded snapshot and stay on this device.")
+                    Text("Site health, failed-build explanations, Field Log summaries and plain-language searches run on this device. Builds and Field Log summaries use a short, redacted excerpt; runtime logs and environment values are never used.")
                         .font(.subheadline).foregroundStyle(Palette.textSecondary)
                 }
             }
+            Section {
+                Toggle("Recent deployments", isOn: $spotlightDeployments)
+                    .accessibilityIdentifier("takt.settings.spotlight.deployments")
+                Toggle("Field Log notes", isOn: $spotlightNotes)
+                    .accessibilityIdentifier("takt.settings.spotlight.notes")
+            } header: {
+                Text("Spotlight")
+            } footer: {
+                Text(DemoMode.isEnabled
+                     ? "Spotlight is not used in Demo."
+                     : "Off unless you turn them on. Deployments show status, environment, branch, short commit and commit subject for sites you open; notes show your own Field Log notes with credentials redacted. Never build logs or environment data. Items stay on this device and are removed when you turn an option off, change team or disconnect.")
+            }
+            .disabled(DemoMode.isEnabled)
+            .onChange(of: spotlightDeployments) { _, _ in Task { await session.syncSpotlight() } }
+            .onChange(of: spotlightNotes) { _, _ in Task { await session.syncSpotlight() } }
             Section("Home Screen widgets") {
                 Label("Deployment status", systemImage: "square.grid.2x2")
                 Text("Add a small, medium or large Taktung widget from the Home Screen widget gallery. The large widget adds recent deployment activity. Widgets show all projects by default. Touch and hold a widget, then choose Edit Widget to filter by project. iOS schedules updates; the checked time shows freshness.")

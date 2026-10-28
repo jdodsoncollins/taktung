@@ -20,11 +20,15 @@ final class AppSession {
     var connection: VercelConnection = .empty()
     var projects: [VercelProject] = []
     var selectedProjectId: ProjectID?
-    var deployments: [VercelDeploymentSummary] = []
+    var deployments: [VercelDeploymentSummary] = [] {
+        didSet { if oldValue != deployments { scheduleSpotlightSync() } }
+    }
     var selectedDeployment: VercelDeploymentSummary?
-    var recentActivity: [ActivityItem] = []
+    var recentActivity: [ActivityItem] = [] {
+        didSet { if oldValue != recentActivity { scheduleSpotlightSync() } }
+    }
     private(set) var evidenceScope: EvidenceScope? {
-        didSet { if oldValue != evidenceScope { recentSearches = [] } }
+        didSet { if oldValue != evidenceScope { recentSearches = []; scheduleSpotlightSync(immediately: true) } }
     }
     /// Deployments returned by Search for the selected site. Detail, inspection
     /// and confirmed actions accept them like loaded deployments until the scope changes.
@@ -148,6 +152,14 @@ final class AppSession {
     @ObservationIgnored private var digestTask: Task<Void, Never>?
     /// The last seven days of the Field Log, counted, with an optional on-device summary. Memory only.
     private(set) var fieldLogDigest: FieldLogDigest?
+    @ObservationIgnored private let spotlight: any SpotlightIndexing
+    @ObservationIgnored private let spotlightSettings: () -> SpotlightSettings
+    @ObservationIgnored private var spotlightTask: Task<Void, Never>?
+    @ObservationIgnored private var spotlightRevision = 0
+    /// A Field Log entry opened from Spotlight, consumed by the Field Log.
+    var spotlightEntryID: String?
+    /// A deployment opened from Spotlight, consumed by Deploys once its site is selected.
+    var focusedDeploymentID: DeploymentID?
     @ObservationIgnored private var briefTask: Task<String?, Never>?
     @ObservationIgnored private var briefRequestID: UUID?
     @ObservationIgnored private var briefRequestKey: BriefReuseCache.Key?
@@ -173,6 +185,8 @@ final class AppSession {
          fieldLogPlanner: @escaping @Sendable (String, [String]) async -> FieldLogModelDraft? = { await OnDevicePlanner.planFieldLogSearch(query: $0, siteNames: $1) },
          buildExplainer: @escaping @Sendable (BuildFailureExcerpt) async -> String? = { await OnDevicePlanner.explainBuildFailure($0) },
          fieldLogSummarizer: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.summarizeFieldLog(prompt: $0) },
+         spotlight: any SpotlightIndexing = SpotlightIndexer.shared,
+         spotlightSettings: @escaping () -> SpotlightSettings = { .current },
          clientFactory: @escaping (String) -> any VercelAPIClient = { token in LiveVercelAPIClient(tokenProvider: { token }) }) {
         self.evidenceStore = evidenceStore
         self.isDemoMode = demoMode
@@ -184,6 +198,8 @@ final class AppSession {
         self.fieldLogPlanner = fieldLogPlanner
         self.buildExplainer = buildExplainer
         self.fieldLogSummarizer = fieldLogSummarizer
+        self.spotlight = spotlight
+        self.spotlightSettings = spotlightSettings
     }
 
     var hasLocalAccountData: Bool { evidenceScope != nil || tokenSource != nil || connection.user != nil }
@@ -567,6 +583,9 @@ final class AppSession {
               selectedProjectId == projectID,
               route.matches(accountID: connection.user?.id, teamID: connection.selectedTeamId) else { return }
         if route.action == .checkHealth { await runOpsBrief() }
+        if let deploymentID = route.deploymentID, knownDeployments.contains(where: { $0.id == deploymentID }) {
+            focusedDeploymentID = deploymentID
+        }
     }
 
     /// Rules first; Apple Intelligence reads only requests the rules cannot place.
@@ -1252,5 +1271,50 @@ final class AppSession {
         digestTask?.cancel()
         digestTask = nil
         fieldLogDigest = nil
+    }
+
+    /// Spotlight follows the person's settings, the current account and team, and
+    /// never Demo. Frequent changes are coalesced; scope changes apply at once.
+    private func scheduleSpotlightSync(immediately: Bool = false) {
+        spotlightTask?.cancel()
+        spotlightTask = Task { [weak self] in
+            if !immediately {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+            }
+            await self?.syncSpotlight()
+        }
+    }
+
+    /// Recent deployments for the selected site and the person's own notes, when
+    /// each is turned on. Everything is removed on disconnect or account and team changes.
+    func syncSpotlight() async {
+        spotlightRevision += 1
+        let settings = spotlightSettings()
+        let scope = isDemoMode ? nil : evidenceScope
+        var update: SpotlightState.Deployments = settings.deployments ? .keep : .remove
+        if settings.deployments, let scope, connection.isConnected, let project = selectedProject, !deployments.isEmpty {
+            update = .replace(projectID: project.id,
+                              items: SpotlightContent.deployments(deployments, project: project, scope: scope))
+        }
+        let notes = settings.notes ? scope.map { SpotlightContent.notes(recentActivity, scope: $0) } : nil
+        await spotlight.apply(SpotlightState(revision: spotlightRevision, scope: scope, deployments: update, notes: notes))
+    }
+
+    /// Opens a Spotlight result: a note in the Field Log, or a deployment in Deploys.
+    func openSpotlightItem(identifier: String) {
+        if let itemID = SpotlightContent.noteItemID(identifier, scope: evidenceScope) {
+            if recentActivity.contains(where: { $0.id == itemID }) { spotlightEntryID = itemID }
+            TaktRouter.open(.activity)
+            return
+        }
+        guard !isDemoMode, let scope = evidenceScope,
+              let record = SpotlightCatalogStore.load()?.deployments.first(where: { identifier == $0.id || identifier.hasSuffix("." + $0.id) }),
+              record.accountID == scope.accountID, record.teamID == scope.teamID else {
+            TaktRouter.open(.home)
+            return
+        }
+        TaktRouter.shared.enqueue(.init(section: .deploys, projectID: record.projectID, accountID: record.accountID,
+                                        teamID: record.teamID, deploymentID: record.id))
     }
 }

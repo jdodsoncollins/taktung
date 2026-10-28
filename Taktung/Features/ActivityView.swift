@@ -125,6 +125,12 @@ struct ActivityView: View {
             }
         }
         .navigationDestination(item: $openedEntry) { HistoryEntryView(item: $0) }
+        .task(id: session.spotlightEntryID) {
+            // A note opened from Spotlight.
+            guard let id = session.spotlightEntryID else { return }
+            session.spotlightEntryID = nil
+            if let item = session.recentActivity.first(where: { $0.id == id }) { openedEntry = item }
+        }
         .searchable(text: $query, prompt: "Search, or ask in your own words")
         .onSubmit(of: .search) { interpret() }
         .accessibilityIdentifier(AccessibilityIDs.tabActivity)
