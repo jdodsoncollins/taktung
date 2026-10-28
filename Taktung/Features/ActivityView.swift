@@ -3,6 +3,7 @@ import SwiftUI
 struct ActivityView: View {
     @Environment(AppSession.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var scope: FieldLogScope = .site
     @State private var filter: FieldLogFilter = .all
     @State private var query = ""
@@ -133,7 +134,7 @@ struct ActivityView: View {
             session.spotlightEntryID = nil
             if let item = session.recentActivity.first(where: { $0.id == id }) { openedEntry = item }
         }
-        .searchable(text: $query, prompt: "Search, or ask in your own words")
+        .searchable(text: $query, prompt: "Search field log")
         .onSubmit(of: .search) { interpret() }
         .accessibilityIdentifier(AccessibilityIDs.tabActivity)
         .confirmationDialog("Clear this account's activity for the current team?", isPresented: $confirmClear, titleVisibility: .visible) {
@@ -183,8 +184,12 @@ struct ActivityView: View {
                 Button {
                     session.summarizeFieldLog(allSites: scope == .all || session.selectedProjectId == nil)
                 } label: {
-                    Label("Summarize the last 7 days", systemImage: "calendar.badge.clock")
-                        .font(.subheadline).frame(minHeight: 44)
+                    // At accessibility sizes the icon column squeezed the title, so the title stands alone.
+                    HStack(spacing: Spacing.sm) {
+                        if !typeSize.isAccessibilitySize { Image(systemName: "calendar.badge.clock").accessibilityHidden(true) }
+                        Text("Summarize the last 7 days").fixedSize(horizontal: false, vertical: true)
+                    }
+                    .font(.subheadline).frame(minHeight: 44, alignment: .leading)
                 }
                 .buttonStyle(.borderless)
                 .disabled(session.fieldLogDigest?.isSummarizing == true)
