@@ -4,6 +4,7 @@ Native SwiftUI port of Takt. Keep this repo separate from the Expo Takt
 codebase and from MobileflowRN.
 
 - Bundle ID is `com.jcollins.takt` (same as Takt).
+- No Expo, EAS or CocoaPods. Store builds are Xcode archive/export plus `asc` upload. The internal TestFlight group is still named "Team (Expo)" because EAS created it for early builds.
 - Target iOS 27. Do not set `UIDesignRequiresCompatibility`.
 - Site scope = selected Vercel project (header title). Do not N+1
   `listDeployments` from the site picker or Home.

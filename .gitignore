@@ -3,11 +3,7 @@ xcuserdata/
 DerivedData/
 build/
 node_modules/
-.expo/
 dist/
-ios/Pods/
-ios/Podfile.lock
-ios/.symlinks/
 .asc/artifacts/
 *.xcuserstate
 *.xccheckout
