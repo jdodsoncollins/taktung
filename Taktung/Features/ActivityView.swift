@@ -17,6 +17,7 @@ struct ActivityView: View {
     @State private var interpretedText = ""
     @State private var interpreting = false
     @State private var interpretTask: Task<Void, Never>?
+    @State private var openedEntry: ActivityItem?
 
     private var matching: [ActivityItem] {
         if let interpretation {
@@ -38,6 +39,13 @@ struct ActivityView: View {
                 controls.id("field-log-top")
                     .listRowSeparator(.hidden)
                     .listRowBackground(Palette.background)
+                if let digest = session.fieldLogDigest {
+                    FieldLogDigestCard(digest: digest, available: Set(session.recentActivity.map(\.id)),
+                                       showSite: digest.scopeLabel == "All sites",
+                                       open: { openedEntry = $0 }, dismiss: { session.dismissFieldLogDigest() })
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Palette.background)
+                }
                 if let error = session.historyStorageError {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .font(.footnote).foregroundStyle(Palette.danger)
@@ -116,6 +124,7 @@ struct ActivityView: View {
                 .accessibilityIdentifier("takt.history.note")
             }
         }
+        .navigationDestination(item: $openedEntry) { HistoryEntryView(item: $0) }
         .searchable(text: $query, prompt: "Search, or ask in your own words")
         .onSubmit(of: .search) { interpret() }
         .accessibilityIdentifier(AccessibilityIDs.tabActivity)
@@ -161,6 +170,17 @@ struct ActivityView: View {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: Spacing.md) { scopePicker; filterPicker; Spacer(minLength: 0) }
                 VStack(alignment: .leading, spacing: 0) { scopePicker; filterPicker }
+            }
+            if !session.recentActivity.isEmpty {
+                Button {
+                    session.summarizeFieldLog(allSites: scope == .all || session.selectedProjectId == nil)
+                } label: {
+                    Label("Summarize the last 7 days", systemImage: "calendar.badge.clock")
+                        .font(.subheadline).frame(minHeight: 44)
+                }
+                .buttonStyle(.borderless)
+                .disabled(session.fieldLogDigest?.isSummarizing == true)
+                .accessibilityIdentifier("takt.history.summarize")
             }
             searchReading
         }
@@ -269,6 +289,74 @@ struct ActivityView: View {
         if Calendar.current.isDateInToday(date) { return "Today" }
         if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
         return date.formatted(date: .abbreviated, time: .omitted)
+    }
+}
+
+/// Deterministic counts on every device, an optional on-device summary, and
+/// the exact entries it read, each opening its saved record.
+private struct FieldLogDigestCard: View {
+    var digest: FieldLogDigest
+    var available: Set<String>
+    var showSite: Bool
+    var open: (ActivityItem) -> Void
+    var dismiss: () -> Void
+    @State private var showsEntries = false
+
+    var body: some View {
+        let entries = digest.entries.filter { available.contains($0.id) }
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Last 7 days · \(digest.scopeLabel)").font(.headline).foregroundStyle(Palette.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: Spacing.sm)
+                Button(action: dismiss) {
+                    Image(systemName: "xmark").frame(minWidth: 44, minHeight: 44)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Dismiss summary")
+                .accessibilityIdentifier("takt.history.summary.dismiss")
+            }
+            Text(digest.facts).font(.subheadline).foregroundStyle(Palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("takt.history.summary.facts")
+            if digest.isSummarizing {
+                ProgressView("Summarizing on device…").font(.footnote)
+            } else if let summary = digest.summary {
+                Label("Apple Intelligence", systemImage: "apple.intelligence")
+                    .font(.caption).foregroundStyle(Palette.textSecondary)
+                Text(summary).font(.body).foregroundStyle(Palette.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("takt.history.summary.text")
+            }
+            if !entries.isEmpty {
+                DisclosureGroup(isExpanded: $showsEntries) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(entries) { item in
+                            Button { open(item) } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.displayTitle).font(.subheadline).foregroundStyle(Palette.text)
+                                    Text([item.createdAt.formatted(.dateTime.weekday(.abbreviated).hour().minute()),
+                                          showSite ? item.projectName : nil].compactMap { $0 }.joined(separator: " · "))
+                                        .font(.caption).foregroundStyle(Palette.textSecondary)
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                } label: {
+                    Text(digest.summary == nil ? "Entries counted (\(entries.count))" : "Based on \(entries.count) \(entries.count == 1 ? "entry" : "entries")")
+                        .font(.subheadline).foregroundStyle(Palette.text)
+                }
+                .accessibilityIdentifier("takt.history.summary.entries")
+            }
+        }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radii.plate, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radii.plate, style: .continuous).strokeBorder(Palette.border, lineWidth: 0.5))
+        .padding(.bottom, Spacing.sm)
     }
 }
 

@@ -144,6 +144,10 @@ final class AppSession {
     @ObservationIgnored private var buildExplanationTask: Task<Void, Never>?
     /// Key log lines, and an optional on-device sentence, for the last diagnosed failure. Memory only.
     private(set) var buildFailure: BuildFailureEvidence?
+    @ObservationIgnored private let fieldLogSummarizer: @Sendable (String) async -> String?
+    @ObservationIgnored private var digestTask: Task<Void, Never>?
+    /// The last seven days of the Field Log, counted, with an optional on-device summary. Memory only.
+    private(set) var fieldLogDigest: FieldLogDigest?
     @ObservationIgnored private var briefTask: Task<String?, Never>?
     @ObservationIgnored private var briefRequestID: UUID?
     @ObservationIgnored private var briefRequestKey: BriefReuseCache.Key?
@@ -168,6 +172,7 @@ final class AppSession {
          searchPlanner: @escaping @Sendable (String, [String]) async -> SearchModelDraft? = { await OnDevicePlanner.planSearch(query: $0, siteNames: $1) },
          fieldLogPlanner: @escaping @Sendable (String, [String]) async -> FieldLogModelDraft? = { await OnDevicePlanner.planFieldLogSearch(query: $0, siteNames: $1) },
          buildExplainer: @escaping @Sendable (BuildFailureExcerpt) async -> String? = { await OnDevicePlanner.explainBuildFailure($0) },
+         fieldLogSummarizer: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.summarizeFieldLog(prompt: $0) },
          clientFactory: @escaping (String) -> any VercelAPIClient = { token in LiveVercelAPIClient(tokenProvider: { token }) }) {
         self.evidenceStore = evidenceStore
         self.isDemoMode = demoMode
@@ -178,6 +183,7 @@ final class AppSession {
         self.searchPlanner = searchPlanner
         self.fieldLogPlanner = fieldLogPlanner
         self.buildExplainer = buildExplainer
+        self.fieldLogSummarizer = fieldLogSummarizer
     }
 
     var hasLocalAccountData: Bool { evidenceScope != nil || tokenSource != nil || connection.user != nil }
@@ -1214,5 +1220,37 @@ final class AppSession {
         buildExplanationTask?.cancel()
         buildExplanationTask = nil
         buildFailure = nil
+        dismissFieldLogDigest()
+    }
+
+    /// Counts the last seven days on every device and, with Apple Intelligence,
+    /// summarizes a bounded, redacted selection of those entries.
+    func summarizeFieldLog(allSites: Bool) {
+        digestTask?.cancel()
+        digestTask = nil
+        guard let account = evidenceScope else { return }
+        let projectID = allSites ? nil : selectedProjectId
+        let label = allSites || selectedProject == nil ? "All sites" : selectedProject.map(siteTitle) ?? "This site"
+        let digest = FieldLogDigestPolicy.digest(entries: recentActivity, projectID: projectID, scopeLabel: label)
+        fieldLogDigest = digest
+        guard !isDemoMode else { return }
+        refreshModelAvailability()
+        guard onDeviceAvailable, let prompt = FieldLogDigestPolicy.prompt(digest, includeSite: projectID == nil) else { return }
+        let scope = scopeGeneration
+        let summarizer = fieldLogSummarizer
+        fieldLogDigest?.isSummarizing = true
+        digestTask = Task { [weak self] in
+            let response = await summarizer(prompt)
+            guard let self, !Task.isCancelled, scope == self.scopeGeneration, account == self.evidenceScope,
+                  self.fieldLogDigest?.id == digest.id else { return }
+            self.fieldLogDigest?.isSummarizing = false
+            self.fieldLogDigest?.summary = response.flatMap { FieldLogDigestPolicy.accept($0, prompt: prompt) }
+        }
+    }
+
+    func dismissFieldLogDigest() {
+        digestTask?.cancel()
+        digestTask = nil
+        fieldLogDigest = nil
     }
 }

@@ -112,6 +112,30 @@ enum OnDevicePlanner {
         #endif
     }
 
+    /// A short summary of a bounded, redacted Field Log selection. Nil when
+    /// unavailable; the deterministic counts and entry list still show.
+    static func summarizeFieldLog(prompt: String) async -> String? {
+        #if canImport(FoundationModels)
+        guard isAvailable, prompt.utf8.count <= FieldLogDigestPolicy.maximumBytes + 256 else { return nil }
+        do {
+            let model = SystemLanguageModel.default
+            let inputTokens = try await model.tokenCount(for: prompt)
+            let instructionTokens = try await model.tokenCount(for: Instructions(FieldLogDigestPolicy.instructions))
+            guard inputTokens + instructionTokens + FieldLogDigestPolicy.responseTokens + 128 < model.contextSize,
+                  !Task.isCancelled else { return nil }
+            let session = LanguageModelSession(model: model, instructions: FieldLogDigestPolicy.instructions)
+            let response = try await session.respond(to: prompt, options: GenerationOptions(
+                samplingMode: .greedy, maximumResponseTokens: FieldLogDigestPolicy.responseTokens))
+            guard !Task.isCancelled else { return nil }
+            return response.content
+        } catch {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     /// Reads a Field Log request into filters. The prompt holds the request and
     /// loaded site names only; journal records never reach the model.
     static func planFieldLogSearch(query: String, siteNames: [String]) async -> FieldLogModelDraft? {

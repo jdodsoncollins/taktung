@@ -93,6 +93,37 @@ struct OnDeviceContextTests {
         #expect(await calls.queries.isEmpty)
     }
 
+    @Test func fieldLogSummaryCountsEverywhereAndSummarizesOnlyTheBoundedSelection() async throws {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let prompts = PlannerCalls()
+        let app = AppSession(evidenceStore: LocalEvidenceStore(root: root), demoMode: false, keychain: keys,
+                             modelAvailability: { true },
+                             fieldLogSummarizer: { prompt in
+                                 await prompts.record(prompt)
+                                 return "You noted the checkout button overlaps on small phones."
+                             },
+                             clientFactory: { _ in DemoAPIClient() })
+        _ = await app.connectWithToken("token")
+        await app.selectProject(DemoIDs.portfolio)
+        let scope = try #require(app.evidenceScope)
+        #expect(await app.addHistoryNote("Checkout button overlaps on small phones", scope: scope,
+                                         projectID: DemoIDs.portfolio, deploymentID: nil))
+        app.summarizeFieldLog(allSites: false)
+        #expect(app.fieldLogDigest?.facts == "Last 7 days: 1 note.")
+        for _ in 0..<500 where app.fieldLogDigest?.isSummarizing == true { await Task.yield() }
+        #expect(app.fieldLogDigest?.summary == "You noted the checkout button overlaps on small phones.")
+        let sent = await prompts.queries
+        #expect(sent.count == 1)
+        #expect(sent.first?.contains("Checkout button overlaps") == true)
+        // Routine connection records are counted out and never sent.
+        #expect(sent.first?.contains("Connected to Vercel") == false)
+        #expect((sent.first?.utf8.count ?? .max) <= FieldLogDigestPolicy.maximumBytes)
+
+        await app.selectProject(DemoIDs.store)
+        #expect(app.fieldLogDigest == nil)
+    }
+
     @Test func demoAndUnavailableModelsKeepTheRules() async {
         let root = newRoot, keys = newKeychain
         defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
