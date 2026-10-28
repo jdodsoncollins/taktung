@@ -86,6 +86,38 @@ enum OnDevicePlanner {
         return nil
         #endif
     }
+
+    /// One sentence restating Home's "Since you last looked" facts. Nil when the
+    /// model is unavailable or the reply changes a number; the facts then stand.
+    static func visitDigest(facts: String) async -> String? {
+        #if canImport(FoundationModels)
+        guard isAvailable, let prompt = BriefModelPolicy.prompt(facts) else { return nil }
+        let started = ContinuousClock.now
+        do {
+            let model = SystemLanguageModel.default
+            let inputTokens = try await model.tokenCount(for: prompt)
+            let instructionTokens = try await model.tokenCount(for: Instructions(VisitDigestModelPolicy.instructions))
+            guard inputTokens + instructionTokens + VisitDigestModelPolicy.responseTokens + 128 < model.contextSize,
+                  !Task.isCancelled else { return nil }
+            let session = LanguageModelSession(model: model, instructions: VisitDigestModelPolicy.instructions)
+            let response = try await session.respond(to: prompt, options: GenerationOptions(
+                samplingMode: .greedy, maximumResponseTokens: VisitDigestModelPolicy.responseTokens))
+            guard !Task.isCancelled else { return nil }
+            let accepted = VisitDigestModelPolicy.accept(response.content, facts: facts)
+            #if DEBUG
+            let duration = started.duration(to: .now).components
+            let milliseconds = duration.seconds * 1_000 + duration.attoseconds / 1_000_000_000_000_000
+            Logger(subsystem: AppConfig.bundleID, category: "OnDeviceVisit").info(
+                "Visit digest input=\(inputTokens + instructionTokens) output=\(response.usage.output.totalTokenCount) ms=\(milliseconds) accepted=\(accepted != nil)")
+            #endif
+            return accepted
+        } catch {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
 }
 
 #if canImport(FoundationModels)

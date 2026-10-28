@@ -22,7 +22,7 @@ Version **1.8.1 (47) is Waiting for App Store Review** and available in internal
 
 | Area | What you get |
 |------|----------------|
-| **Home / projects** | Selected **site** briefing, production state, needs-attention. Header switches sites on every tab |
+| **Home / projects** | Selected **site** briefing, production state, needs-attention, and “Since you last looked”: new deployments, failures and production changes since the site was last on screen. Header switches sites on every tab |
 | **Deployments** | Search commit/branch/SHA/URL; combine Production/Preview with status filters. Redeploy / promote / rollback stay hard-confirm actions |
 | **Project tools** | Web Analytics, remote Vercel activity, domain ownership, actual checks, cron schedules and flag names; available without an LLM |
 | **Web Analytics** | Visitors, page views, daily traffic and pages/referrers/countries/devices for the selected site; completed UTC reporting windows and honest access/plan states |

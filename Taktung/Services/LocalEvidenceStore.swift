@@ -79,6 +79,31 @@ actor LocalEvidenceStore {
         }
     }
 
+    private struct Visits: Codable {
+        var version = 1
+        var marks: [ProjectID: SiteVisitMark]
+    }
+
+    static let visitLimit = 50
+
+    /// Where each site was when its Home was last left. Missing or unreadable
+    /// marks only mean no "Since you last looked" summary.
+    func loadVisitMarks(scope: EvidenceScope) -> [ProjectID: SiteVisitMark] {
+        let url = directory(scope).appendingPathComponent("visits.json")
+        guard let data = try? Data(contentsOf: url), let visits = try? JSONDecoder().decode(Visits.self, from: data),
+              visits.version == 1 else { return [:] }
+        return visits.marks
+    }
+
+    func saveVisitMark(_ mark: SiteVisitMark, projectID: ProjectID, scope: EvidenceScope) throws {
+        var marks = loadVisitMarks(scope: scope)
+        marks[projectID] = mark
+        if marks.count > Self.visitLimit {
+            for (id, _) in marks.sorted(by: { $0.value.seenAt > $1.value.seenAt }).dropFirst(Self.visitLimit) { marks[id] = nil }
+        }
+        try write(Visits(marks: marks), to: directory(scope).appendingPathComponent("visits.json"))
+    }
+
     func eraseAccount(scope: EvidenceScope) throws {
         let url = accountDirectory(scope)
         if manager.fileExists(atPath: url.path) { try manager.removeItem(at: url) }

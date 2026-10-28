@@ -352,6 +352,42 @@ struct SessionQualityTests {
         #expect(await calls.queries.count == 1)
     }
 
+    @Test @MainActor func sinceLastVisitStartsABaselineThenSummarizesTheNextVisit() async throws {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let app = AppSession(evidenceStore: LocalEvidenceStore(root: root), demoMode: false, keychain: keys,
+                             modelAvailability: { true },
+                             visitDigestGenerator: { _ in "Since then, 9 deploys went out." },
+                             clientFactory: { SessionTestAPI(account: $0) })
+        app.refreshModelAvailability()
+        _ = await app.connectWithToken("A")
+        await app.selectProject("A-one")
+        #expect(app.sinceLastVisit == nil, "A first visit only starts the baseline")
+        await app.recordVisit()?.value
+        let scope = try #require(app.evidenceScope)
+        #expect(await app.evidenceStore.loadVisitMarks(scope: scope)["A-one"]?.newestDeploymentAt == 1)
+
+        // A mark from before the site's only deployment.
+        try await app.evidenceStore.saveVisitMark(SiteVisitMark(seenAt: Date(timeIntervalSince1970: 0), newestDeploymentAt: 0,
+                                                                productionDeploymentID: nil), projectID: "A-one", scope: scope)
+        await app.refreshSinceLastVisit(newVisit: true)
+        let visit = try #require(app.sinceLastVisit)
+        #expect(visit.newDeployments.map(\.id) == ["A-one-deploy"])
+        await app.visitDigestTask?.value
+        #expect(app.sinceLastVisit?.usedAppleIntelligence == false, "A sentence that changes a number is discarded")
+        #expect(app.sinceLastVisit?.summary == visit.summary)
+        #expect(!app.isGeneratingVisitDigest)
+
+        // Refreshing within the same visit keeps the summary.
+        await app.loadDeployments("A-one")
+        #expect(app.sinceLastVisit?.newDeployments.map(\.id) == ["A-one-deploy"])
+
+        await app.selectProject("A-two")
+        #expect(app.sinceLastVisit?.projectID != "A-one")
+        await app.disconnect()
+        #expect(app.sinceLastVisit == nil)
+    }
+
     @Test @MainActor func recentSearchesStayInMemoryAndSkipSecrets() async {
         let root = newRoot, keys = newKeychain
         defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }

@@ -48,7 +48,14 @@ struct RootView: View {
             if !ready { Task { await handlePendingRoute() } }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await handlePendingRoute() } }
+            switch phase {
+            case .active:
+                Task { await handlePendingRoute(); await session.appDidBecomeActive() }
+            case .background:
+                session.appDidEnterBackground()
+            default:
+                break
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.background.ignoresSafeArea())

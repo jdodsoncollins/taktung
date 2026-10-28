@@ -24,7 +24,7 @@ final class AppSession {
     var selectedDeployment: VercelDeploymentSummary?
     var recentActivity: [ActivityItem] = []
     private(set) var evidenceScope: EvidenceScope? {
-        didSet { if oldValue != evidenceScope { recentSearches = [] } }
+        didSet { if oldValue != evidenceScope { recentSearches = []; sinceLastVisit = nil } }
     }
     /// Deployments returned by Search for the selected site. Detail, inspection
     /// and confirmed actions accept them like loaded deployments until the scope changes.
@@ -33,6 +33,9 @@ final class AppSession {
     private(set) var recentSearches: [String] = []
     /// A search to run once Search appears for a newly selected site.
     var pendingSearch: String?
+    /// Home's "Since you last looked" summary for the selected site, this visit.
+    private(set) var sinceLastVisit: SinceLastVisit?
+    private(set) var isGeneratingVisitDigest = false
     private(set) var historyStorageError: String?
     private(set) var historyIsBusy = false
     @ObservationIgnored let evidenceStore: LocalEvidenceStore
@@ -140,6 +143,10 @@ final class AppSession {
     @ObservationIgnored private let modelAvailability: () -> Bool
     @ObservationIgnored private let briefGenerator: @Sendable (String) async -> String?
     @ObservationIgnored private let searchPlanner: @Sendable (String, [String]) async -> SearchModelDraft?
+    @ObservationIgnored private let visitDigestGenerator: @Sendable (String) async -> String?
+    @ObservationIgnored private(set) var visitDigestTask: Task<Void, Never>?
+    @ObservationIgnored private var backgroundedAt: Date?
+    @ObservationIgnored private var visitSaveTask: Task<Void, Never>?
     @ObservationIgnored private var briefTask: Task<String?, Never>?
     @ObservationIgnored private var briefRequestID: UUID?
     @ObservationIgnored private var briefRequestKey: BriefReuseCache.Key?
@@ -151,7 +158,10 @@ final class AppSession {
     private var hasBootstrapped = false
     @ObservationIgnored private let isDemoMode: Bool
     private var scopeGeneration = 0 {
-        didSet { domainSignals = nil; runtimeSignals = nil; searchedDeployments = [] }
+        didSet {
+            domainSignals = nil; runtimeSignals = nil; searchedDeployments = []
+            visitDigestTask?.cancel(); sinceLastVisit = nil; isGeneratingVisitDigest = false
+        }
     }
     @ObservationIgnored private var domainSignals: (scope: InspectionScope, date: Date, unverified: Int)?
     @ObservationIgnored private var runtimeSignals: (scope: InspectionScope, date: Date, deploymentID: String, records: Int, errors: Int)?
@@ -162,6 +172,7 @@ final class AppSession {
          modelAvailability: @escaping () -> Bool = { OnDevicePlanner.isAvailable },
          briefGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.brief(context: $0) },
          searchPlanner: @escaping @Sendable (String, [String]) async -> SearchModelDraft? = { await OnDevicePlanner.planSearch(query: $0, siteNames: $1) },
+         visitDigestGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.visitDigest(facts: $0) },
          clientFactory: @escaping (String) -> any VercelAPIClient = { token in LiveVercelAPIClient(tokenProvider: { token }) }) {
         self.evidenceStore = evidenceStore
         self.isDemoMode = demoMode
@@ -170,6 +181,7 @@ final class AppSession {
         self.modelAvailability = modelAvailability
         self.briefGenerator = briefGenerator
         self.searchPlanner = searchPlanner
+        self.visitDigestGenerator = visitDigestGenerator
     }
 
     var hasLocalAccountData: Bool { evidenceScope != nil || tokenSource != nil || connection.user != nil }
@@ -265,6 +277,9 @@ final class AppSession {
         defer { historyIsBusy = false }
         isBusy = false
         await flushHistory()
+        // A visit mark still being written must land before the erase, not after it.
+        await visitSaveTask?.value
+        visitSaveTask = nil
         if let oldScope {
             do { try await evidenceStore.eraseAccount(scope: oldScope) }
             catch {
@@ -347,6 +362,7 @@ final class AppSession {
     }
 
     func selectProject(_ id: ProjectID?) async {
+        if id != selectedProjectId { recordVisit() }
         reviewOpportunity = nil
         cancelBriefGeneration()
         scopeGeneration += 1
@@ -366,6 +382,7 @@ final class AppSession {
                 deployments = []
             }
             publishWidgetSnapshot()
+            await refreshSinceLastVisit()
             return
         }
         if let id {
@@ -393,6 +410,7 @@ final class AppSession {
                 outcome: .success,
                 projectId: projectId
             )
+            await refreshSinceLastVisit()
         } catch {
             guard scope == scopeGeneration, selectedProjectId == projectId else { return }
             lastError = error.localizedDescription
@@ -595,6 +613,86 @@ final class AppSession {
     }
 
     func clearRecentSearches() { recentSearches = [] }
+
+    // MARK: Since you last looked
+
+    /// A return after this long starts a new visit; a shorter trip away keeps
+    /// the summary the person was reading.
+    static let visitGap: TimeInterval = 10 * 60
+
+    /// Compares the loaded deployments with the mark left when this site was
+    /// last on screen. Runs once per visit, so pull-to-refresh keeps the summary.
+    func refreshSinceLastVisit(newVisit: Bool = false) async {
+        guard let project = selectedProject, let scope = evidenceScope, !deployments.isEmpty else { return }
+        if !newVisit, sinceLastVisit?.projectID == project.id { return }
+        let generation = scopeGeneration
+        var marks = await evidenceStore.loadVisitMarks(scope: scope)
+        guard generation == scopeGeneration, evidenceScope == scope, selectedProjectId == project.id else { return }
+        let production = visitProduction(project)
+        if marks[project.id] == nil {
+            // A first visit starts the baseline. Demo begins three hours back so the summary has something to show.
+            guard isDemoMode else { recordVisit(); return }
+            let start = Date().addingTimeInterval(-3 * 3_600)
+            marks[project.id] = SiteVisitMark(seenAt: start, newestDeploymentAt: start.timeIntervalSince1970 * 1000,
+                                             productionDeploymentID: production?.id)
+        }
+        guard let mark = marks[project.id] else { return }
+        let visit = summarizeSinceLastVisit(projectID: project.id, mark: mark, deployments: deployments, production: production)
+        visitDigestTask?.cancel()
+        isGeneratingVisitDigest = false
+        sinceLastVisit = visit
+        guard !isDemoMode, onDeviceAvailable, let facts = visitDigestFacts(visit, siteName: siteTitle(project)) else { return }
+        isGeneratingVisitDigest = true
+        let generator = visitDigestGenerator
+        visitDigestTask = Task { [weak self] in
+            let reply = await generator(facts)
+            guard let self, !Task.isCancelled, generation == self.scopeGeneration, self.sinceLastVisit == visit else { return }
+            self.isGeneratingVisitDigest = false
+            guard let reply, let sentence = VisitDigestModelPolicy.accept(reply, facts: facts) else { return }
+            self.sinceLastVisit?.summary = sentence
+            self.sinceLastVisit?.usedAppleIntelligence = true
+        }
+    }
+
+    /// Moves the selected site's mark to what is loaded now, when the person
+    /// leaves the site or the app. Saves run in order; the returned task
+    /// finishes once this one and every earlier one is written.
+    @discardableResult
+    func recordVisit() -> Task<Void, Never>? {
+        guard let project = selectedProject, let scope = evidenceScope,
+              let newest = deployments.map(\.createdAt).max() else { return visitSaveTask }
+        let mark = SiteVisitMark(seenAt: Date(), newestDeploymentAt: newest, productionDeploymentID: visitProduction(project)?.id)
+        let store = evidenceStore
+        let previous = visitSaveTask
+        let save = Task {
+            await previous?.value
+            try? await store.saveVisitMark(mark, projectID: project.id, scope: scope)
+        }
+        visitSaveTask = save
+        return save
+    }
+
+    func appDidEnterBackground() {
+        backgroundedAt = Date()
+        recordVisit()
+    }
+
+    /// After a long enough absence, reload the site so the summary covers the time away.
+    func appDidBecomeActive() async {
+        guard let away = backgroundedAt else { return }
+        backgroundedAt = nil
+        guard Date().timeIntervalSince(away) >= Self.visitGap, let projectID = selectedProjectId else { return }
+        sinceLastVisit = nil
+        if isDemoMode {
+            await refreshSinceLastVisit(newVisit: true)
+        } else if let api = try? await ensureAPI() {
+            try? await loadDeploymentsThrowing(projectID, api: api, teamId: connection.selectedTeamId)
+        }
+    }
+
+    private func visitProduction(_ project: VercelProject) -> VercelDeploymentSummary? {
+        project.productionDeployment ?? deployments.first { $0.target == .production && $0.state == .ready }
+    }
 
     func runEnvDrift() async {
         guard let project = selectedProject, let api = try? await ensureAPI() else { return }
@@ -1071,6 +1169,7 @@ final class AppSession {
         guard scope == scopeGeneration, selectedProjectId == projectId, connection.selectedTeamId == teamId else { return }
         deployments = list
         publishWidgetSnapshot()
+        await refreshSinceLastVisit()
     }
 
     private func invalidateWidget() {

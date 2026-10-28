@@ -32,6 +32,12 @@ Apple references: [LanguageModelSession](https://developer.apple.com/documentati
 
 Fresh domain ownership findings and runtime sample counts can inform the bounded heuristic for five minutes in the same host revision. Only counts and a deployment identity are retained; raw runtime messages and flag values are excluded. Generated summaries must retain sample and ownership qualifications when those findings are present, or the heuristic remains. Scope and model qualification regression tests are recorded in [the 1.6 release](release-1.6.0-43.md).
 
+## Since you last looked
+
+Home compares the loaded deployments (the newest 30) with a mark saved when the person last left the site or the app: when it was, the newest deployment creation time, and the production deployment. `summarizeSinceLastVisit` counts newer deployments by outcome, reports a full page as “at least 30”, and names a production change even without new deployments (a promotion or rollback). The first visit only saves the mark. A return within ten minutes keeps the summary being read, and pull-to-refresh does too; a longer absence reloads the site and starts a new comparison. Marks live in the account/team evidence directory (`visits.json`, at most 50 sites) and are erased with the rest of the account's evidence on disconnect. Demo starts three hours back so the card has content.
+
+Where Apple Intelligence can run outside Demo, the model may restate the facts (the summary plus up to three failed deployments' commit titles and branches, secret-checked, within the 2,048-byte brief bound) as one sentence. `VisitDigestModelPolicy` applies the brief's format checks and discards any reply containing a number, digits or spelled out, that is not in the facts. The deterministic summary shows first, and failed deployments stay listed beneath it either way.
+
 ## Search
 
 Search was gated on Apple Intelligence through 1.8.1 but never called the model: it matched “ready”, “failed” and “environment” against the 30 loaded deployments, so requests such as “successful deployments” found nothing. It now shows on every device and works in three stages. Devices without Apple Intelligence use the rules and the live request alone. Where the model can run (or in Demo, for screenshots), the Search page shows an “Apple Intelligence used for deeper searching” badge with a switch, on by default and stored in `UserDefaults`; turning it off keeps stage 2 from running.
