@@ -6,6 +6,9 @@ struct SiteVisitMark: Codable, Hashable, Sendable {
     /// Newest deployment creation time seen then, in Vercel milliseconds.
     var newestDeploymentAt: TimeInterval
     var productionDeploymentID: DeploymentID?
+    /// The loaded deployments then. A deployment seen before never counts as new,
+    /// even if its reported time moves (Demo rebuilds its times on every load).
+    var seenDeploymentIDs: [DeploymentID]? = nil
 }
 
 /// Changes since a mark, worked out from the loaded deployments. A full page of
@@ -29,7 +32,9 @@ let visitDeploymentWindow = 30
 func summarizeSinceLastVisit(projectID: ProjectID, mark: SiteVisitMark, deployments: [VercelDeploymentSummary],
                              production: VercelDeploymentSummary?, now: Date = Date(),
                              calendar: Calendar = .current) -> SinceLastVisit {
-    let fresh = deployments.filter { $0.createdAt > mark.newestDeploymentAt }.sorted { $0.createdAt > $1.createdAt }
+    let seen = Set(mark.seenDeploymentIDs ?? [])
+    let fresh = deployments.filter { $0.createdAt > mark.newestDeploymentAt && !seen.contains($0.id) }
+        .sorted { $0.createdAt > $1.createdAt }
     let atLeast = fresh.count >= visitDeploymentWindow
     let moved = production.flatMap { $0.id == mark.productionDeploymentID ? nil : $0 }
     let when = visitTimeLabel(mark.seenAt, now: now, calendar: calendar)

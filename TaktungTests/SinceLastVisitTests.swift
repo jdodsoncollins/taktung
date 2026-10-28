@@ -61,6 +61,15 @@ struct SinceLastVisitTests {
         #expect(busy.summary.hasSuffix(", all ready."))
     }
 
+    @Test func aDeploymentSeenBeforeIsNeverNewEvenIfItsTimeMoves() {
+        let rebuilt = deploy("same", .ready, minutesAgo: 1)
+        var seen = mark(hoursAgo: 1, production: nil)
+        seen.seenDeploymentIDs = ["same"]
+        let visit = summarizeSinceLastVisit(projectID: "p", mark: seen, deployments: [rebuilt], production: nil,
+                                            now: now, calendar: calendar)
+        #expect(visit.isQuiet)
+    }
+
     @Test func timeLabelsNameTheDay() {
         #expect(visitTimeLabel(now.addingTimeInterval(-3_600), now: now.addingTimeInterval(1), calendar: calendar).hasPrefix("yesterday at "))
         #expect(visitTimeLabel(now.addingTimeInterval(-3 * 86_400), now: now, calendar: calendar).contains(" at "))

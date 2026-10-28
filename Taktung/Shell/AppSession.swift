@@ -697,7 +697,8 @@ final class AppSession {
     func recordVisit() -> Task<Void, Never>? {
         guard let project = selectedProject, let scope = evidenceScope,
               let newest = deployments.map(\.createdAt).max() else { return visitSaveTask }
-        let mark = SiteVisitMark(seenAt: Date(), newestDeploymentAt: newest, productionDeploymentID: visitProduction(project)?.id)
+        let mark = SiteVisitMark(seenAt: Date(), newestDeploymentAt: newest, productionDeploymentID: visitProduction(project)?.id,
+                                 seenDeploymentIDs: deployments.map(\.id))
         let store = evidenceStore
         let previous = visitSaveTask
         let save = Task {
@@ -1085,6 +1086,7 @@ final class AppSession {
             historyStorageError = error.localizedDescription
         }
         tokenSource = .pat
+        await refreshSinceLastVisit()
     }
 
     private func connectWithStoredToken(_ token: String) async -> ConnectionAttemptResult {
