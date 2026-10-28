@@ -13,8 +13,16 @@ codebase and from MobileflowRN.
 - Mutating actions: allow-list + ConfirmationPolicy + hard confirm.
   READY only after poll.
 - Liquid Glass on navigation chrome only; content = opaque HIG surfaces.
-- Heuristic Diagnose always works. Hide Search LLM chrome when
-  `OnDevicePlanner.isAvailable` is false, except in demo mode (screenshots).
+- Heuristic Diagnose always works. Search shows on every device; without
+  Apple Intelligence (or with the Search page's switch off) the rules answer
+  alone. Show the "Apple Intelligence used for deeper searching" badge and
+  switch only when `OnDevicePlanner.isAvailable`, or in demo mode (screenshots).
+  The Search tab uses the magnifying glass, not the sparkle.
+- Search: rules (`SearchRules`) first; the on-device model only reads words the
+  rules leave unplaced, and `SearchModelPolicy` drops any branch/commit/site not
+  literally in the request. Deployment searches are one read-only
+  `GET /v7/deployments` for the selected site, re-checked on device. Keep
+  results' filters visible and removable. See docs/apple-intelligence.md#search.
 - Prefer unit tests for domain/analysis and API mapping.
 - Identity (bundle ID, team, privacy URL) lives in `AppConfig`.
 - Update `README.md` and `docs/` when revising architecture.
@@ -38,6 +46,11 @@ codebase and from MobileflowRN.
   and publish the heuristic without waiting for generation. Availability must
   reflect the actual device/model state; do not imply physical performance
   verification from simulator measurements.
+- Model input policy (approved October 28): build-log and Field Log text may
+  reach the on-device model only as bounded, redacted excerpts chosen by
+  deterministic code (about 2 KB). Never full log transcripts, runtime log
+  records or environment values. Generated text stays in memory, never in the
+  Field Log, and must pass grounding checks against its excerpt.
 
 ## Project inspection tools (1.6)
 
@@ -117,6 +130,14 @@ codebase and from MobileflowRN.
 - The later App Store image set must include genuine small/medium and large widget captures. Keep the flat inspection-sheet format without sequence numbers, concise deploy-focused captions and neutral/teal palette distinct from Codable's promotional imagery. Export through the attributed App Store image studio; preserve capture pixels and source aspect ratios.
 - Current release notes and description include widget support at the user's request. Canonical store text is in `metadata/`; the user approved the descriptor, subtitle, keyword/description proposals and Developer Tools category in docs/app-store-discovery.md on 2026-10-12. Preserve the existing requested notes plus the widget paragraph. Metadata edits do not authorize resuming the withdrawn review.
 - On 2026-10-12 the user separately authorized submitting 1.5.0 with all completed features. Include all widget sizes, Siri/Shortcuts, brief lifecycle improvements, native review cadence, comparison/history, UI and centered icon C. Track the actual build/submission state in docs/release-1.5.0-42.md; the previous withdrawal is historical.
+
+## On-device context (Field Log search, build explanations, summaries, Spotlight)
+
+- Field Log search: `FieldLogRules` first; the model reads only leftover words and sees the request and site names, never journal records. `FieldLogModelPolicy` drops text or sites not literally in the request. Typing without submitting keeps the literal match; filters are removable chips.
+- Failed builds: `BuildFailurePolicy` selects at most 24 redacted lines (2 KB) around the first and last errors. The key lines show on every device; the one-sentence explanation is rejected if it quotes paths, packages or codes missing from the excerpt, or suggests a deployment action.
+- Field Log summary: last 7 days, counts on every device, at most 30 redacted entries (2 KB) to the model, listed with the summary. Numbers, quotes and recorded actions must come from that selection.
+- Spotlight: both switches are off by default. Deployments are a `DeploymentEntity` (IndexedEntity) with site, status, environment, branch, short commit and subject only; notes are the person's own. Clear everything on switch off, account/team change and disconnect; never index Demo. See docs/on-device-context.md.
+- 1.9.0 (48) shipped these with Search on every device to internal TestFlight on October 28 (build 41458abb-bc66-4037-87c7-02d7e8a19137, VALID, Team (Expo) only). The user authorized only the TestFlight upload: no external beta or App Review without a new in-thread approval. 1.8.1 (47) is live. See docs/release-1.9.0-48.md for receipts and what stays unverified (iPad, live Vercel paths, real model output).
 
 ## Siri, Shortcuts and brief lifecycle
 

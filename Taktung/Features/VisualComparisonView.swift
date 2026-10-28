@@ -57,7 +57,7 @@ struct VisualComparisonView: View {
     }
 
     private var candidateBelongsToSite: Bool {
-        session.selectedProject != nil && session.deployments.contains { $0.id == deployment.id }
+        session.selectedProject != nil && session.knownDeployments.contains { $0.id == deployment.id }
     }
 
     var body: some View {

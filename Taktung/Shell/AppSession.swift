@@ -20,10 +20,26 @@ final class AppSession {
     var connection: VercelConnection = .empty()
     var projects: [VercelProject] = []
     var selectedProjectId: ProjectID?
-    var deployments: [VercelDeploymentSummary] = []
+    var deployments: [VercelDeploymentSummary] = [] {
+        didSet { if oldValue != deployments { scheduleSpotlightSync() } }
+    }
     var selectedDeployment: VercelDeploymentSummary?
-    var recentActivity: [ActivityItem] = []
-    private(set) var evidenceScope: EvidenceScope?
+    var recentActivity: [ActivityItem] = [] {
+        didSet { if oldValue != recentActivity { scheduleSpotlightSync() } }
+    }
+    private(set) var evidenceScope: EvidenceScope? {
+        didSet { if oldValue != evidenceScope { recentSearches = []; sinceLastVisit = nil; scheduleSpotlightSync(immediately: true) } }
+    }
+    /// Deployments returned by Search for the selected site. Detail, inspection
+    /// and confirmed actions accept them like loaded deployments until the scope changes.
+    private(set) var searchedDeployments: [VercelDeploymentSummary] = []
+    /// This launch's submitted searches for the current account, newest first. Memory only.
+    private(set) var recentSearches: [String] = []
+    /// A search to run once Search appears for a newly selected site.
+    var pendingSearch: String?
+    /// Home's "Since you last looked" summary for the selected site, this visit.
+    private(set) var sinceLastVisit: SinceLastVisit?
+    private(set) var isGeneratingVisitDigest = false
     private(set) var historyStorageError: String?
     private(set) var historyIsBusy = false
     @ObservationIgnored let evidenceStore: LocalEvidenceStore
@@ -58,7 +74,15 @@ final class AppSession {
         projects.first { $0.id == selectedProjectId }
     }
 
-    var showsSearch: Bool { onDeviceAvailable || isDemoMode }
+    /// Search works on every device; the Apple Intelligence badge and switch
+    /// appear only where the model can run, or in demo for screenshots.
+    var showsSearchModelControls: Bool { onDeviceAvailable || isDemoMode }
+
+    /// Loaded deployments plus Search results for the same site and scope.
+    var knownDeployments: [VercelDeploymentSummary] {
+        let loaded = Set(deployments.map(\.id))
+        return deployments + searchedDeployments.filter { !loaded.contains($0.id) }
+    }
 
     var canDiagnose: Bool { selectedProject != nil }
 
@@ -108,7 +132,7 @@ final class AppSession {
     private func inspectionAPI(scope: InspectionScope, deploymentID: DeploymentID?) async throws -> any VercelAPIClient {
         guard inspectionScope == scope else { throw CancellationError() }
         if let deploymentID {
-            guard deployments.contains(where: { $0.id == deploymentID }) || selectedProject?.productionDeployment?.id == deploymentID else {
+            guard knownDeployments.contains(where: { $0.id == deploymentID }) || selectedProject?.productionDeployment?.id == deploymentID else {
                 throw VercelAPIError(status: 404, detail: "Deployment is no longer in this project's snapshot.")
             }
         }
@@ -122,6 +146,29 @@ final class AppSession {
     @ObservationIgnored private let clientFactory: (String) -> any VercelAPIClient
     @ObservationIgnored private let modelAvailability: () -> Bool
     @ObservationIgnored private let briefGenerator: @Sendable (String) async -> String?
+    @ObservationIgnored private let searchPlanner: @Sendable (String, [String]) async -> SearchModelDraft?
+    @ObservationIgnored private let visitDigestGenerator: @Sendable (String) async -> String?
+    @ObservationIgnored private(set) var visitDigestTask: Task<Void, Never>?
+    @ObservationIgnored private var backgroundedAt: Date?
+    @ObservationIgnored private var visitSaveTask: Task<Void, Never>?
+    // On-device context (see the section at the end of this class).
+    @ObservationIgnored private let fieldLogPlanner: @Sendable (String, [String]) async -> FieldLogModelDraft?
+    @ObservationIgnored private let buildExplainer: @Sendable (BuildFailureExcerpt) async -> String?
+    @ObservationIgnored private var buildExplanationTask: Task<Void, Never>?
+    /// Key log lines, and an optional on-device sentence, for the last diagnosed failure. Memory only.
+    private(set) var buildFailure: BuildFailureEvidence?
+    @ObservationIgnored private let fieldLogSummarizer: @Sendable (String) async -> String?
+    @ObservationIgnored private var digestTask: Task<Void, Never>?
+    /// The last seven days of the Field Log, counted, with an optional on-device summary. Memory only.
+    private(set) var fieldLogDigest: FieldLogDigest?
+    @ObservationIgnored private let spotlight: any SpotlightIndexing
+    @ObservationIgnored private let spotlightSettings: () -> SpotlightSettings
+    @ObservationIgnored private var spotlightTask: Task<Void, Never>?
+    @ObservationIgnored private var spotlightRevision = 0
+    /// A Field Log entry opened from Spotlight, consumed by the Field Log.
+    var spotlightEntryID: String?
+    /// A deployment opened from Spotlight, consumed by Deploys once its site is selected.
+    var focusedDeploymentID: DeploymentID?
     @ObservationIgnored private var briefTask: Task<String?, Never>?
     @ObservationIgnored private var briefRequestID: UUID?
     @ObservationIgnored private var briefRequestKey: BriefReuseCache.Key?
@@ -133,7 +180,11 @@ final class AppSession {
     private var hasBootstrapped = false
     @ObservationIgnored private let isDemoMode: Bool
     private var scopeGeneration = 0 {
-        didSet { domainSignals = nil; runtimeSignals = nil }
+        didSet {
+            domainSignals = nil; runtimeSignals = nil; searchedDeployments = []
+            visitDigestTask?.cancel(); sinceLastVisit = nil; isGeneratingVisitDigest = false
+            clearOnDeviceContext()
+        }
     }
     @ObservationIgnored private var domainSignals: (scope: InspectionScope, date: Date, unverified: Int)?
     @ObservationIgnored private var runtimeSignals: (scope: InspectionScope, date: Date, deploymentID: String, records: Int, errors: Int)?
@@ -143,6 +194,13 @@ final class AppSession {
     init(evidenceStore: LocalEvidenceStore = LocalEvidenceStore(), demoMode: Bool = DemoMode.isEnabled, keychain: KeychainStore = KeychainStore(),
          modelAvailability: @escaping () -> Bool = { OnDevicePlanner.isAvailable },
          briefGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.brief(context: $0) },
+         searchPlanner: @escaping @Sendable (String, [String]) async -> SearchModelDraft? = { await OnDevicePlanner.planSearch(query: $0, siteNames: $1) },
+         visitDigestGenerator: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.visitDigest(facts: $0) },
+         fieldLogPlanner: @escaping @Sendable (String, [String]) async -> FieldLogModelDraft? = { await OnDevicePlanner.planFieldLogSearch(query: $0, siteNames: $1) },
+         buildExplainer: @escaping @Sendable (BuildFailureExcerpt) async -> String? = { await OnDevicePlanner.explainBuildFailure($0) },
+         fieldLogSummarizer: @escaping @Sendable (String) async -> String? = { await OnDevicePlanner.summarizeFieldLog(prompt: $0) },
+         spotlight: any SpotlightIndexing = SpotlightIndexer.shared,
+         spotlightSettings: @escaping () -> SpotlightSettings = { .current },
          clientFactory: @escaping (String) -> any VercelAPIClient = { token in LiveVercelAPIClient(tokenProvider: { token }) }) {
         self.evidenceStore = evidenceStore
         self.isDemoMode = demoMode
@@ -150,6 +208,13 @@ final class AppSession {
         self.clientFactory = clientFactory
         self.modelAvailability = modelAvailability
         self.briefGenerator = briefGenerator
+        self.searchPlanner = searchPlanner
+        self.visitDigestGenerator = visitDigestGenerator
+        self.fieldLogPlanner = fieldLogPlanner
+        self.buildExplainer = buildExplainer
+        self.fieldLogSummarizer = fieldLogSummarizer
+        self.spotlight = spotlight
+        self.spotlightSettings = spotlightSettings
     }
 
     var hasLocalAccountData: Bool { evidenceScope != nil || tokenSource != nil || connection.user != nil }
@@ -245,6 +310,9 @@ final class AppSession {
         defer { historyIsBusy = false }
         isBusy = false
         await flushHistory()
+        // A visit mark still being written must land before the erase, not after it.
+        await visitSaveTask?.value
+        visitSaveTask = nil
         if let oldScope {
             do { try await evidenceStore.eraseAccount(scope: oldScope) }
             catch {
@@ -327,6 +395,7 @@ final class AppSession {
     }
 
     func selectProject(_ id: ProjectID?) async {
+        if id != selectedProjectId { recordVisit() }
         reviewOpportunity = nil
         cancelBriefGeneration()
         scopeGeneration += 1
@@ -346,6 +415,7 @@ final class AppSession {
                 deployments = []
             }
             publishWidgetSnapshot()
+            await refreshSinceLastVisit()
             return
         }
         if let id {
@@ -373,6 +443,7 @@ final class AppSession {
                 outcome: .success,
                 projectId: projectId
             )
+            await refreshSinceLastVisit()
         } catch {
             guard scope == scopeGeneration, selectedProjectId == projectId else { return }
             lastError = error.localizedDescription
@@ -390,14 +461,14 @@ final class AppSession {
             selectedDeployment = nil
             return
         }
-        if let existing = deployments.first(where: { $0.id == id }) {
+        if let existing = knownDeployments.first(where: { $0.id == id }) {
             selectedDeployment = existing
         }
         guard let api = try? await ensureAPI() else { return }
         do {
             let loaded = try await api.getDeployment(id: id, teamId: connection.selectedTeamId)
             guard scope == scopeGeneration, deploymentSelection == id,
-                  sourceDeploymentBelongsToProject(id, projectDeployments: deployments) else { return }
+                  sourceDeploymentBelongsToProject(id, projectDeployments: knownDeployments) else { return }
             selectedDeployment = loaded
         } catch {
             guard scope == scopeGeneration, deploymentSelection == id else { return }
@@ -533,6 +604,131 @@ final class AppSession {
               selectedProjectId == projectID,
               route.matches(accountID: connection.user?.id, teamID: connection.selectedTeamId) else { return }
         if route.action == .checkHealth { await runOpsBrief() }
+        if let deploymentID = route.deploymentID, knownDeployments.contains(where: { $0.id == deploymentID }) {
+            focusedDeploymentID = deploymentID
+        }
+    }
+
+    /// Rules first; Apple Intelligence reads only requests the rules cannot place,
+    /// and only while the Search page's switch allows it.
+    func interpretSearch(_ text: String, allowModel: Bool = true) async -> SiteSearchInterpretation {
+        let rules = planSiteSearch(text, projects: projects, selectedProjectID: selectedProjectId)
+        guard rules.needsModel, allowModel, !isDemoMode else { return rules }
+        refreshModelAvailability()
+        guard onDeviceAvailable else { return rules }
+        let scope = scopeGeneration
+        let draft = await searchPlanner(text, projects.map(siteTitle))
+        guard !Task.isCancelled, scope == scopeGeneration else { return rules }
+        guard let draft, let plan = SearchModelPolicy.plan(draft, query: text, rules: rules, projects: projects,
+                                                           selectedProjectID: selectedProjectId) else { return rules }
+        return SiteSearchInterpretation(plan: plan, interpreter: .appleIntelligence)
+    }
+
+    /// A live, read-only `GET /v7/deployments` for the selected site.
+    func searchDeployments(_ query: DeploymentQuery) async throws -> [VercelDeploymentSummary] {
+        guard let projectID = selectedProjectId else { throw CancellationError() }
+        let scope = scopeGeneration
+        let teamID = connection.selectedTeamId
+        let api = try await ensureAPI()
+        let found = try await api.searchDeployments(projectId: projectID, teamId: teamID, query: query)
+        try Task.checkCancellation()
+        guard scope == scopeGeneration, selectedProjectId == projectID, connection.selectedTeamId == teamID else {
+            throw CancellationError()
+        }
+        let foundIDs = Set(found.map(\.id))
+        searchedDeployments = Array((found + searchedDeployments.filter { !foundIDs.contains($0.id) }).prefix(300))
+        return found
+    }
+
+    func rememberSearch(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !containsSecretLike(trimmed) else { return }
+        recentSearches.removeAll { $0.caseInsensitiveCompare(trimmed) == .orderedSame }
+        recentSearches.insert(trimmed, at: 0)
+        recentSearches = Array(recentSearches.prefix(5))
+    }
+
+    func clearRecentSearches() { recentSearches = [] }
+
+    // MARK: Since you last looked
+
+    /// A return after this long starts a new visit; a shorter trip away keeps
+    /// the summary the person was reading.
+    static let visitGap: TimeInterval = 10 * 60
+
+    /// Compares the loaded deployments with the mark left when this site was
+    /// last on screen. Runs once per visit, so pull-to-refresh keeps the summary.
+    func refreshSinceLastVisit(newVisit: Bool = false) async {
+        guard let project = selectedProject, let scope = evidenceScope, !deployments.isEmpty else { return }
+        if !newVisit, sinceLastVisit?.projectID == project.id { return }
+        let generation = scopeGeneration
+        var marks = await evidenceStore.loadVisitMarks(scope: scope)
+        guard generation == scopeGeneration, evidenceScope == scope, selectedProjectId == project.id else { return }
+        let production = visitProduction(project)
+        if marks[project.id] == nil {
+            // A first visit starts the baseline. Demo begins three hours back so the summary has something to show.
+            guard isDemoMode else { recordVisit(); return }
+            let start = Date().addingTimeInterval(-3 * 3_600)
+            marks[project.id] = SiteVisitMark(seenAt: start, newestDeploymentAt: start.timeIntervalSince1970 * 1000,
+                                             productionDeploymentID: production?.id)
+        }
+        guard let mark = marks[project.id] else { return }
+        let visit = summarizeSinceLastVisit(projectID: project.id, mark: mark, deployments: deployments, production: production)
+        visitDigestTask?.cancel()
+        isGeneratingVisitDigest = false
+        sinceLastVisit = visit
+        guard !isDemoMode, onDeviceAvailable, let facts = visitDigestFacts(visit, siteName: siteTitle(project)) else { return }
+        isGeneratingVisitDigest = true
+        let generator = visitDigestGenerator
+        visitDigestTask = Task { [weak self] in
+            let reply = await generator(facts)
+            guard let self, !Task.isCancelled, generation == self.scopeGeneration, self.sinceLastVisit == visit else { return }
+            self.isGeneratingVisitDigest = false
+            guard let reply, let sentence = VisitDigestModelPolicy.accept(reply, facts: facts) else { return }
+            self.sinceLastVisit?.summary = sentence
+            self.sinceLastVisit?.usedAppleIntelligence = true
+        }
+    }
+
+    /// Moves the selected site's mark to what is loaded now, when the person
+    /// leaves the site or the app. Saves run in order; the returned task
+    /// finishes once this one and every earlier one is written.
+    @discardableResult
+    func recordVisit() -> Task<Void, Never>? {
+        guard let project = selectedProject, let scope = evidenceScope,
+              let newest = deployments.map(\.createdAt).max() else { return visitSaveTask }
+        let mark = SiteVisitMark(seenAt: Date(), newestDeploymentAt: newest, productionDeploymentID: visitProduction(project)?.id,
+                                 seenDeploymentIDs: deployments.map(\.id))
+        let store = evidenceStore
+        let previous = visitSaveTask
+        let save = Task {
+            await previous?.value
+            try? await store.saveVisitMark(mark, projectID: project.id, scope: scope)
+        }
+        visitSaveTask = save
+        return save
+    }
+
+    func appDidEnterBackground() {
+        backgroundedAt = Date()
+        recordVisit()
+    }
+
+    /// After a long enough absence, reload the site so the summary covers the time away.
+    func appDidBecomeActive() async {
+        guard let away = backgroundedAt else { return }
+        backgroundedAt = nil
+        guard Date().timeIntervalSince(away) >= Self.visitGap, let projectID = selectedProjectId else { return }
+        sinceLastVisit = nil
+        if isDemoMode {
+            await refreshSinceLastVisit(newVisit: true)
+        } else if let api = try? await ensureAPI() {
+            try? await loadDeploymentsThrowing(projectID, api: api, teamId: connection.selectedTeamId)
+        }
+    }
+
+    private func visitProduction(_ project: VercelProject) -> VercelDeploymentSummary? {
+        project.productionDeployment ?? deployments.first { $0.target == .production && $0.state == .ready }
     }
 
     func runEnvDrift() async {
@@ -617,6 +813,7 @@ final class AppSession {
                 projectId: project.id,
                 deploymentId: failed.id
             )
+            recordBuildFailure(deploymentID: failed.id, logs: logs)
         } catch {
             guard scope == scopeGeneration, selectedProjectId == project.id else { return }
             lastError = error.localizedDescription
@@ -625,7 +822,7 @@ final class AppSession {
 
     func deploymentForDisplay(_ summary: VercelDeploymentSummary) -> VercelDeploymentSummary {
         if let current = selectedDeployment, current.id == summary.id,
-           sourceDeploymentBelongsToProject(current.id, projectDeployments: deployments) { return current }
+           sourceDeploymentBelongsToProject(current.id, projectDeployments: knownDeployments) { return current }
         return summary
     }
 
@@ -639,7 +836,7 @@ final class AppSession {
             lastError = "Pick a deployment first."
             return
         }
-        guard sourceDeploymentBelongsToProject(deploy.id, projectDeployments: deployments) else {
+        guard sourceDeploymentBelongsToProject(deploy.id, projectDeployments: knownDeployments) else {
             lastError = "The deployment does not belong to the selected site. Refresh and try again."
             return
         }
@@ -684,7 +881,7 @@ final class AppSession {
     func confirmMutation(_ pending: PendingMutation) async {
         guard let project = selectedProject,
               pending.action.projectId == project.id,
-              pending.action.deploymentId.map({ sourceDeploymentBelongsToProject($0, projectDeployments: deployments) }) == true,
+              pending.action.deploymentId.map({ sourceDeploymentBelongsToProject($0, projectDeployments: knownDeployments) }) == true,
               mutationConfirmation(for: pending.action)?.teamId == connection.selectedTeamId else {
             lastError = "Confirmation did not match the planned mutation."
             return
@@ -889,6 +1086,7 @@ final class AppSession {
             historyStorageError = error.localizedDescription
         }
         tokenSource = .pat
+        await refreshSinceLastVisit()
     }
 
     private func connectWithStoredToken(_ token: String) async -> ConnectionAttemptResult {
@@ -1010,6 +1208,7 @@ final class AppSession {
         guard scope == scopeGeneration, selectedProjectId == projectId, connection.selectedTeamId == teamId else { return }
         deployments = list
         publishWidgetSnapshot()
+        await refreshSinceLastVisit()
     }
 
     private func invalidateWidget() {
@@ -1093,5 +1292,135 @@ final class AppSession {
                 if self?.evidenceScope == scope { self?.historyStorageError = "History could not be saved. Existing records have been kept." }
             }
         }
+    }
+
+    // MARK: - On-device context: Field Log search, build explanations, Field Log summaries, Spotlight
+
+    /// Rules first; Apple Intelligence reads only Field Log requests the rules cannot place,
+    /// and only while Search's Apple Intelligence switch allows it.
+    /// The model sees the request and loaded site names, never the journal.
+    func interpretFieldLogSearch(_ text: String, allowModel: Bool = true) async -> FieldLogInterpretation {
+        let rules = FieldLogRules.parse(text, projects: projects)
+        guard rules.needsModel, allowModel, !isDemoMode else { return rules }
+        refreshModelAvailability()
+        guard onDeviceAvailable else { return rules }
+        let scope = scopeGeneration
+        let account = evidenceScope
+        let draft = await fieldLogPlanner(text, projects.map(siteTitle))
+        guard !Task.isCancelled, scope == scopeGeneration, account == evidenceScope, let draft,
+              let reading = FieldLogModelPolicy.interpretation(draft, query: text, rules: rules, projects: projects) else {
+            return rules
+        }
+        return reading
+    }
+
+    /// Key lines on every device; an on-device sentence when Apple Intelligence is
+    /// available. Generation never holds the busy flag or blocks navigation.
+    private func recordBuildFailure(deploymentID: DeploymentID, logs: [BuildLogLine]) {
+        buildExplanationTask?.cancel()
+        buildExplanationTask = nil
+        guard let excerpt = BuildFailurePolicy.excerpt(from: logs) else {
+            buildFailure = nil
+            return
+        }
+        buildFailure = BuildFailureEvidence(deploymentID: deploymentID, excerpt: excerpt)
+        guard !isDemoMode else { return }
+        refreshModelAvailability()
+        guard onDeviceAvailable, BuildFailurePolicy.prompt(excerpt) != nil else { return }
+        let scope = scopeGeneration
+        let explainer = buildExplainer
+        buildFailure?.isExplaining = true
+        buildExplanationTask = Task { [weak self] in
+            let response = await explainer(excerpt)
+            guard let self, !Task.isCancelled, scope == self.scopeGeneration,
+                  self.buildFailure?.deploymentID == deploymentID, self.buildFailure?.excerpt == excerpt else { return }
+            self.buildFailure?.isExplaining = false
+            self.buildFailure?.explanation = response.flatMap { BuildFailurePolicy.accept($0, excerpt: excerpt) }
+        }
+    }
+
+    /// Site, team, account and reconnection changes discard on-device context and
+    /// cancel its generation, so a late reply cannot land on another scope.
+    private func clearOnDeviceContext() {
+        buildExplanationTask?.cancel()
+        buildExplanationTask = nil
+        buildFailure = nil
+        dismissFieldLogDigest()
+    }
+
+    /// Counts the last seven days on every device and, with Apple Intelligence,
+    /// summarizes a bounded, redacted selection of those entries.
+    func summarizeFieldLog(allSites: Bool) {
+        digestTask?.cancel()
+        digestTask = nil
+        guard let account = evidenceScope else { return }
+        let projectID = allSites ? nil : selectedProjectId
+        let label = allSites || selectedProject == nil ? "All sites" : selectedProject.map(siteTitle) ?? "This site"
+        let digest = FieldLogDigestPolicy.digest(entries: recentActivity, projectID: projectID, scopeLabel: label)
+        fieldLogDigest = digest
+        guard !isDemoMode else { return }
+        refreshModelAvailability()
+        guard onDeviceAvailable, let prompt = FieldLogDigestPolicy.prompt(digest, includeSite: projectID == nil) else { return }
+        let scope = scopeGeneration
+        let summarizer = fieldLogSummarizer
+        fieldLogDigest?.isSummarizing = true
+        digestTask = Task { [weak self] in
+            let response = await summarizer(prompt)
+            guard let self, !Task.isCancelled, scope == self.scopeGeneration, account == self.evidenceScope,
+                  self.fieldLogDigest?.id == digest.id else { return }
+            self.fieldLogDigest?.isSummarizing = false
+            self.fieldLogDigest?.summary = response.flatMap { FieldLogDigestPolicy.accept($0, prompt: prompt) }
+        }
+    }
+
+    func dismissFieldLogDigest() {
+        digestTask?.cancel()
+        digestTask = nil
+        fieldLogDigest = nil
+    }
+
+    /// Spotlight follows the person's settings, the current account and team, and
+    /// never Demo. Frequent changes are coalesced; scope changes apply at once.
+    private func scheduleSpotlightSync(immediately: Bool = false) {
+        spotlightTask?.cancel()
+        spotlightTask = Task { [weak self] in
+            if !immediately {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+            }
+            await self?.syncSpotlight()
+        }
+    }
+
+    /// Recent deployments for the selected site and the person's own notes, when
+    /// each is turned on. Everything is removed on disconnect or account and team changes.
+    func syncSpotlight() async {
+        spotlightRevision += 1
+        let settings = spotlightSettings()
+        let scope = isDemoMode ? nil : evidenceScope
+        var update: SpotlightState.Deployments = settings.deployments ? .keep : .remove
+        if settings.deployments, let scope, connection.isConnected, let project = selectedProject, !deployments.isEmpty {
+            update = .replace(projectID: project.id,
+                              items: SpotlightContent.deployments(deployments, project: project, scope: scope))
+        }
+        let notes = settings.notes ? scope.map { SpotlightContent.notes(recentActivity, scope: $0) } : nil
+        await spotlight.apply(SpotlightState(revision: spotlightRevision, scope: scope, deployments: update, notes: notes))
+    }
+
+    /// Opens a Spotlight result: a note in the Field Log, or a deployment in Deploys.
+    func openSpotlightItem(identifier: String) {
+        if let itemID = SpotlightContent.noteItemID(identifier, scope: evidenceScope) {
+            if recentActivity.contains(where: { $0.id == itemID }) { spotlightEntryID = itemID }
+            TaktRouter.open(.activity)
+            return
+        }
+        guard !isDemoMode, let scope = evidenceScope,
+              let record = SpotlightCatalogStore.load()?.deployments.first(where: { identifier == $0.id || identifier.hasSuffix("." + $0.id) }),
+              record.accountID == scope.accountID, record.teamID == scope.teamID else {
+            TaktRouter.open(.home)
+            return
+        }
+        TaktRouter.shared.enqueue(.init(section: .deploys, projectID: record.projectID, accountID: record.accountID,
+                                        teamID: record.teamID, deploymentID: record.id))
     }
 }

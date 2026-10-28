@@ -65,6 +65,11 @@ private struct SessionTestAPI: VercelAPIClient {
         if let deploymentsGate { await deploymentsGate.wait() }
         return [deployment(projectId)]
     }
+    func searchDeployments(projectId: ProjectID, teamId: TeamID?, query: DeploymentQuery) async throws -> [VercelDeploymentSummary] {
+        var older = deployment(projectId)
+        older.id = "\(projectId)-older"
+        return [deployment(projectId), older].filter { query.matches($0, now: Date(timeIntervalSince1970: 10)) }
+    }
     func getDeployment(id: String, teamId: String?) async throws -> VercelDeploymentSummary {
         if let gate { await gate.wait() }
         var value = deployment("\(account)-one")
@@ -80,6 +85,11 @@ private struct SessionTestAPI: VercelAPIClient {
     func promote(deploymentId: String, projectId: String, teamId: String?) async throws { throw VercelAPIError(status: 400, detail: "Tests cannot mutate") }
     func rollback(deploymentId: String, projectId: String, teamId: String?) async throws { throw VercelAPIError(status: 400, detail: "Tests cannot mutate") }
     func productionDeploymentID(projectId: String, teamId: String?) async throws -> String? { deployment(projectId).id }
+}
+
+private actor SearchPlannerCalls {
+    private(set) var queries: [String] = []
+    func record(_ query: String) { queries.append(query) }
 }
 
 @Suite(.serialized)
@@ -295,5 +305,97 @@ struct SessionQualityTests {
             do { try await request.value; Issue.record("Old analytics published after scope changed") }
             catch { #expect(error is CancellationError) }
         }
+    }
+
+    @Test @MainActor func searchResultsOpenLikeLoadedDeploymentsUntilTheSiteChanges() async throws {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let app = session(root: root, keychain: keys) { SessionTestAPI(account: $0) }
+        _ = await app.connectWithToken("A")
+        await app.selectProject("A-one")
+        #expect(!app.knownDeployments.contains { $0.id == "A-one-older" })
+        let found = try await app.searchDeployments(DeploymentQuery(states: [.ready]))
+        #expect(found.map(\.id) == ["A-one-deploy", "A-one-older"])
+        #expect(app.knownDeployments.map(\.id) == ["A-one-deploy", "A-one-older"])
+        await app.selectDeployment("A-one-older")
+        #expect(app.selectedDeployment?.id == "A-one-older")
+        app.requestMutation(mode: .redeploy)
+        #expect(app.pendingMutation != nil, "A searched deployment belongs to the selected site")
+        await app.selectProject("A-two")
+        #expect(app.searchedDeployments.isEmpty)
+        #expect(!app.knownDeployments.contains { $0.id == "A-one-older" })
+    }
+
+    @Test @MainActor func modelReadsOnlyRequestsTheRulesCannotPlace() async {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let calls = SearchPlannerCalls()
+        let app = AppSession(evidenceStore: LocalEvidenceStore(root: root), demoMode: false, keychain: keys,
+                             modelAvailability: { true },
+                             searchPlanner: { query, _ in
+                                 await calls.record(query)
+                                 return SearchModelDraft(intent: .deployments, timeframe: .lastHours, amount: 12)
+                             },
+                             clientFactory: { SessionTestAPI(account: $0) })
+        _ = await app.connectWithToken("A")
+        await app.selectProject("A-one")
+        let plain = await app.interpretSearch("successful deployments")
+        #expect(plain.interpreter == .rules)
+        #expect(await calls.queries.isEmpty)
+        let read = await app.interpretSearch("successful deploys while I slept")
+        #expect(read.interpreter == .appleIntelligence)
+        #expect(read.plan == .deployments(DeploymentQuery(states: [.ready], window: .lastHours(12))))
+        #expect(await calls.queries == ["successful deploys while I slept"])
+        // With the Search page's switch off, the rules answer alone.
+        let rulesOnly = await app.interpretSearch("successful deploys while I slept", allowModel: false)
+        #expect(rulesOnly.interpreter == .rules)
+        #expect(await calls.queries.count == 1)
+    }
+
+    @Test @MainActor func sinceLastVisitStartsABaselineThenSummarizesTheNextVisit() async throws {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let app = AppSession(evidenceStore: LocalEvidenceStore(root: root), demoMode: false, keychain: keys,
+                             modelAvailability: { true },
+                             visitDigestGenerator: { _ in "Since then, 9 deploys went out." },
+                             clientFactory: { SessionTestAPI(account: $0) })
+        app.refreshModelAvailability()
+        _ = await app.connectWithToken("A")
+        await app.selectProject("A-one")
+        #expect(app.sinceLastVisit == nil, "A first visit only starts the baseline")
+        await app.recordVisit()?.value
+        let scope = try #require(app.evidenceScope)
+        #expect(await app.evidenceStore.loadVisitMarks(scope: scope)["A-one"]?.newestDeploymentAt == 1)
+
+        // A mark from before the site's only deployment.
+        try await app.evidenceStore.saveVisitMark(SiteVisitMark(seenAt: Date(timeIntervalSince1970: 0), newestDeploymentAt: 0,
+                                                                productionDeploymentID: nil), projectID: "A-one", scope: scope)
+        await app.refreshSinceLastVisit(newVisit: true)
+        let visit = try #require(app.sinceLastVisit)
+        #expect(visit.newDeployments.map(\.id) == ["A-one-deploy"])
+        await app.visitDigestTask?.value
+        #expect(app.sinceLastVisit?.usedAppleIntelligence == false, "A sentence that changes a number is discarded")
+        #expect(app.sinceLastVisit?.summary == visit.summary)
+        #expect(!app.isGeneratingVisitDigest)
+
+        // Refreshing within the same visit keeps the summary.
+        await app.loadDeployments("A-one")
+        #expect(app.sinceLastVisit?.newDeployments.map(\.id) == ["A-one-deploy"])
+
+        await app.selectProject("A-two")
+        #expect(app.sinceLastVisit?.projectID != "A-one")
+        await app.disconnect()
+        #expect(app.sinceLastVisit == nil)
+    }
+
+    @Test @MainActor func recentSearchesStayInMemoryAndSkipSecrets() async {
+        let root = newRoot, keys = newKeychain
+        defer { keys.eraseAll(); try? FileManager.default.removeItem(at: root) }
+        let app = session(root: root, keychain: keys) { SessionTestAPI(account: $0) }
+        _ = await app.connectWithToken("A")
+        for query in ["failed deploys", "ready", "Failed deploys", "token vcp_secret", "a", "b", "c"] { app.rememberSearch(query) }
+        #expect(app.recentSearches == ["c", "b", "a", "Failed deploys", "ready"])
+        await app.disconnect()
+        #expect(app.recentSearches.isEmpty)
     }
 }

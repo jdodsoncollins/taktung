@@ -10,6 +10,9 @@ struct HomeView: View {
                 AdaptiveWorkspace {
                     VStack(alignment: .leading, spacing: Spacing.xl) {
                         banners
+                        if let visit = session.sinceLastVisit, visit.projectID == project.id {
+                            SinceLastVisitCard(visit: visit, generating: session.isGeneratingVisitDigest)
+                        }
                         SiteRackView(project: project)
                         reviewTask
                         NavigationLink {
@@ -181,6 +184,48 @@ struct HomeView: View {
             }
         }.foregroundStyle(Palette.text).padding(.horizontal, Spacing.lg).padding(.vertical, Spacing.lg)
             .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).contentShape(Rectangle())
+    }
+}
+
+/// What changed on the site since it was last on screen. Counts come from the
+/// loaded deployments; Apple Intelligence may only rephrase them.
+private struct SinceLastVisitCard: View {
+    var visit: SinceLastVisit
+    var generating: Bool
+
+    var body: some View {
+        if visit.isQuiet {
+            Label(visit.summary, systemImage: "checkmark.circle")
+                .font(.subheadline).foregroundStyle(Palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("takt.home.sinceLastVisit")
+        } else {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text("Since you last looked").font(.headline)
+                Text(visit.summary).font(.body).foregroundStyle(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if generating {
+                    ProgressView("Summarizing on device…").font(.caption)
+                } else if visit.usedAppleIntelligence {
+                    Label("Apple Intelligence", systemImage: "apple.intelligence")
+                        .font(.caption).foregroundStyle(Palette.textSecondary)
+                }
+                ForEach(visit.failed.prefix(3)) { deployment in
+                    NavigationLink { DeploymentDetailView(deployment: deployment) } label: {
+                        DeploymentRowView(deployment: deployment)
+                    }.buttonStyle(.plain)
+                }
+                if visit.failed.count > 3 {
+                    Text("\(visit.failed.count - 3) more failed. See Deploys.")
+                        .font(.footnote).foregroundStyle(Palette.textSecondary)
+                }
+            }
+            .foregroundStyle(Palette.text)
+            .padding(Spacing.lg).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radii.plate))
+            .overlay(RoundedRectangle(cornerRadius: Radii.plate).strokeBorder(Palette.border, lineWidth: 0.5))
+            .accessibilityIdentifier("takt.home.sinceLastVisit")
+        }
     }
 }
 

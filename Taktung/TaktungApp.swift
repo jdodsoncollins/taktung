@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreSpotlight
 
 @main
 struct TaktungApp: App {
@@ -13,6 +14,10 @@ struct TaktungApp: App {
                 .environment(session)
                 .environment(tipStore)
                 .task { tipStore.startTransactionListener() }
+                .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                    guard let identifier = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String else { return }
+                    session.openSpotlightItem(identifier: identifier)
+                }
                 .preferredColorScheme(appearance.colorScheme)
                 .tint(Palette.accent)
                 .onChange(of: scenePhase) { _, phase in

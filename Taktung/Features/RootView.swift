@@ -31,12 +31,10 @@ struct RootView: View {
                     .id(SiteNavigationScope(evidence: session.evidenceScope, projectID: nil,
                                             invocationID: navigationInvocations[.activity]))
             }
-            if session.showsSearch {
-                Tab("Search", systemImage: "sparkle", value: TaktSection.search) {
-                    NavigationStack { SearchView() }
-                        .id(SiteNavigationScope(evidence: session.evidenceScope, projectID: session.selectedProjectId,
-                                                invocationID: navigationInvocations[.search]))
-                }
+            Tab("Search", systemImage: "magnifyingglass", value: TaktSection.search) {
+                NavigationStack { SearchView() }
+                    .id(SiteNavigationScope(evidence: session.evidenceScope, projectID: session.selectedProjectId,
+                                            invocationID: navigationInvocations[.search]))
             }
         }
         .tabViewStyle(.sidebarAdaptable)
@@ -50,10 +48,14 @@ struct RootView: View {
             if !ready { Task { await handlePendingRoute() } }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await handlePendingRoute() } }
-        }
-        .onChange(of: session.showsSearch) { _, available in
-            if !available, section == .search { section = .home }
+            switch phase {
+            case .active:
+                Task { await handlePendingRoute(); await session.appDidBecomeActive() }
+            case .background:
+                session.appDidEnterBackground()
+            default:
+                break
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.background.ignoresSafeArea())
@@ -100,7 +102,7 @@ struct RootView: View {
         guard scenePhase == .active, !session.isRehydrating,
               let route = router.takePending() else { return }
         // Change the visible tab before optional generation starts.
-        section = route.section == .search && !session.showsSearch ? .home : route.section
+        section = route.section
         navigationInvocations[section] = route.id
         await session.handleShortcutRoute(route)
     }

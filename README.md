@@ -14,7 +14,7 @@ confirmation for mutators and honest success/failure in Activity.
 
 Source is [MIT](LICENSE).
 
-Version **1.8.1 (47) is Waiting for App Store Review** and available in internal TestFlight, with automatic App Store release after approval. It fixes Web Analytics loading and explains Vercel errors instead of reporting a connection problem; see the [1.8.1 release record](docs/release-1.8.1-47.md). App Store Connect shows 1.8.0 (46) live. That release added optional Apple tips in Settings and kept Codable, TabForge and Paper & Grain in Other Apps. It also shipped the Web Analytics work, all widgets and shortcuts, project inspection, visual comparison, Field Log and centered icon C. The listing retains 31 number-free images and two iPhone/iPad App Preview videos. See the [1.8.0 release record](docs/release-1.8.0-46.md), [Tip Jar architecture](docs/tip-jar.md), [analytics architecture](docs/web-analytics.md) and [listing imagery](docs/app-store-imagery.md) for the verified distribution state. The earlier 1.7 review was withdrawn; 1.7.1 remained an unsubmitted draft. App Store Connect confirmed [1.6.0 (43)](docs/release-1.6.0-43.md) live on October 20.
+**1.9.0 (48) is in internal TestFlight** only: Search on every device, “Since you last looked” on Home, Field Log search and the 7-day summary, failed-build key lines with on-device explanations, and opt-in Spotlight. It has not been submitted for external beta or App Review; see the [1.9.0 release record](docs/release-1.9.0-48.md). Version **1.8.1 (47) is live on the App Store**; App Store Connect showed it Ready for Distribution on October 28. It fixes Web Analytics loading and explains Vercel errors instead of reporting a connection problem; see the [1.8.1 release record](docs/release-1.8.1-47.md). The earlier 1.8.0 (46) added optional Apple tips in Settings and kept Codable, TabForge and Paper & Grain in Other Apps. It also shipped the Web Analytics work, all widgets and shortcuts, project inspection, visual comparison, Field Log and centered icon C. The listing retains 31 number-free images and two iPhone/iPad App Preview videos. See the [1.8.0 release record](docs/release-1.8.0-46.md), [Tip Jar architecture](docs/tip-jar.md), [analytics architecture](docs/web-analytics.md) and [listing imagery](docs/app-store-imagery.md) for the verified distribution state. The earlier 1.7 review was withdrawn; 1.7.1 remained an unsubmitted draft. App Store Connect confirmed [1.6.0 (43)](docs/release-1.6.0-43.md) live on October 20.
 
 ---
 
@@ -22,22 +22,23 @@ Version **1.8.1 (47) is Waiting for App Store Review** and available in internal
 
 | Area | What you get |
 |------|----------------|
-| **Home / projects** | Selected **site** briefing, production state, needs-attention. Header switches sites on every tab |
+| **Home / projects** | Selected **site** briefing, production state, needs-attention, and “Since you last looked”: new deployments, failures and production changes since the site was last on screen. Header switches sites on every tab |
 | **Deployments** | Search commit/branch/SHA/URL; combine Production/Preview with status filters. Redeploy / promote / rollback stay hard-confirm actions |
 | **Project tools** | Web Analytics, remote Vercel activity, domain ownership, actual checks, cron schedules and flag names; available without an LLM |
 | **Web Analytics** | Visitors, page views, daily traffic and pages/referrers/countries/devices for the selected site; completed UTC reporting windows and honest access/plan states |
 | **Logs** | Search, timestamps, errors-only filter and redacted copy/share for up to 500 build lines; bounded runtime stream for one deployment |
 | **Visual comparison** | Fresh WebKit page captures, reveal slider, side-by-side review, and saved route baselines with commit/time provenance |
-| **History** | Persistent device history, site filters, search, notes, entry detail, and text export; isolated by account and team |
+| **History** | Persistent device history, site filters, notes, entry detail, and text export; isolated by account and team. Search in plain language (“failed checks this week”, “notes about checkout”) and summarize the last 7 days, with counts on every device |
 | **Home Screen widgets** | Small, medium and large deployment status/counts with recent activity, native Edit Widget project filter, All projects by default, system appearance |
 | **Siri / Shortcuts** | Fresh deployment status with spoken/composable output, optional project filters, project inspection, site-health explanation and direct navigation |
-| **Incident summary** | Deterministic diagnosis from logs, env presence, last success |
+| **Incident summary** | Deterministic diagnosis from logs, env presence, last success, with the key redacted log lines; an optional on-device sentence explains them |
+| **Spotlight** | Opt-in recent deployments and Field Log notes in system search, removed on switch off, team change or disconnect |
 | **Env drift** | Names and targets only — **never secret values** |
 | **READY poll** | After mutators, Activity records READY only when Vercel confirms |
 | **Tip Jar** | Optional repeatable Apple tips in Settings; no feature unlocks, backend or saved purchase history |
 | **Auth** | Personal access token (Keychain). OAuth PKCE support is planned |
 | **Demo** | Screenshot fixture path. Off unless `TAKT_DEMO_MODE` is set. Never mixed with live Vercel |
-| **Search** | Actionable site and loaded-deployment lookup; visible when Apple Intelligence is available, or in demo for screenshots |
+| **Search** | Plain-language deployment search for the selected site (“successful deploys this week”, “last failed preview on main”) as live, read-only Vercel requests; site lookup and the env check. Available on every device. Where Apple Intelligence can run, it reads phrasing the built-in rules don't recognise, behind an on/off switch on the Search page |
 | **UI** | SwiftUI, iOS 27.1 SDK, adaptive split workspaces, Liquid Glass chrome, opaque adaptive neutral content, with persistent System / Light / Dark appearance |
 
 ### Safety rules
@@ -49,6 +50,7 @@ Version **1.8.1 (47) is Waiting for App Store Review** and available in internal
 - Deployment success is only claimed when Vercel reports **READY**; promote and rollback also verify the production target
 - Site changes invalidate pending confirmations and stale deployment responses
 - Build logs redact credential assignments before display or analysis
+- The on-device model sees build-log or Field Log text only as bounded, redacted excerpts; never runtime logs or env values
 
 ### Control plane
 
@@ -133,6 +135,8 @@ See [Duo readiness](docs/iphone-duo-readiness.md) for the runtime test matrix an
 Settings offers persistent System, Light and Dark appearance. System changes also update an open Settings sheet. Home leads with production state and a direct comparison task; deployment mutations live in a native menu and retain hard confirmation. Settings uses the app icon’s matching light/dark appearance, and Other Apps uses bundled official artwork with full text wrapping.
 
 Apple Intelligence availability refreshes on foreground activation and before a check. The heuristic brief appears immediately. Optional generation rewrites only that snapshot body, capped at 2,048 UTF-8 bytes and measured with the real model tokenizer. Each request uses a fresh session, greedy sampling and a 192-token response ceiling with context headroom. No log transcript, journal, environment values or model actions enter that request. Unavailable models and rejected responses retain the heuristic result. Identical scoped evidence reuses an accepted brief for up to five minutes; duplicate in-flight checks coalesce and site changes cancel obsolete work. See [Apple Intelligence lifecycle](docs/apple-intelligence.md).
+
+Search turns a request into `GET /v7/deployments` filters for the selected site: state, Production/Preview, branch, commit SHA, time window and count. A deterministic vocabulary handles common phrasing instantly and without a model. Only words it cannot place go to the on-device model through guided generation; model values that are not literally in the request (branch, commit text, site) are discarded, and rule-decided filters always win. Each live result is checked again on the device. When no commit contains every typed word, related words (word forms, developer synonyms and on-device word-embedding neighbours) get one more pass, and the results say so. Results show their filters as removable chips, and the field's clear button or New search returns to suggestions and this launch's recent searches. See [Search](docs/apple-intelligence.md#search).
 
 ### Siri and Shortcuts
 

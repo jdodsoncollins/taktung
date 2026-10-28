@@ -3,6 +3,7 @@ import SwiftUI
 struct ActivityView: View {
     @Environment(AppSession.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var scope: FieldLogScope = .site
     @State private var filter: FieldLogFilter = .all
     @State private var query = ""
@@ -12,14 +13,28 @@ struct ActivityView: View {
     @State private var visibleIDs = Set<String>()
     @State private var initialized = false
     @State private var atTop = true
+    /// A submitted search read into filters. Typing without submitting keeps the literal match.
+    @State private var interpretation: FieldLogInterpretation?
+    @State private var interpretedText = ""
+    @State private var interpreting = false
+    @State private var interpretTask: Task<Void, Never>?
+    @State private var openedEntry: ActivityItem?
+    /// The Search page's Apple Intelligence switch also governs Field Log search.
+    @AppStorage(SearchPreferences.appleIntelligenceKey) private var useAppleIntelligence = true
 
     private var matching: [ActivityItem] {
-        fieldLogEntries(session.recentActivity, projectID: session.selectedProjectId,
-                        scope: scope, filter: filter, search: query)
+        if let interpretation {
+            return fieldLogEntries(session.recentActivity, projectID: session.selectedProjectId,
+                                   scope: scope, filter: filter, query: interpretation.query)
+        }
+        return fieldLogEntries(session.recentActivity, projectID: session.selectedProjectId,
+                               scope: scope, filter: filter, search: query)
     }
     private var items: [ActivityItem] { matching.filter { visibleIDs.contains($0.id) } }
     private var pendingCount: Int { matching.filter { !visibleIDs.contains($0.id) }.count }
-    private var hasFilters: Bool { filter != .all || !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var hasFilters: Bool {
+        filter != .all || interpretation != nil || !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -27,6 +42,13 @@ struct ActivityView: View {
                 controls.id("field-log-top")
                     .listRowSeparator(.hidden)
                     .listRowBackground(Palette.background)
+                if let digest = session.fieldLogDigest {
+                    FieldLogDigestCard(digest: digest, available: Set(session.recentActivity.map(\.id)),
+                                       showSite: digest.scopeLabel == "All sites",
+                                       open: { openedEntry = $0 }, dismiss: { session.dismissFieldLogDigest() })
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Palette.background)
+                }
                 if let error = session.historyStorageError {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .font(.footnote).foregroundStyle(Palette.danger)
@@ -72,7 +94,11 @@ struct ActivityView: View {
             .onChange(of: session.recentActivity.map(\.id)) { _, _ in
                 if atTop { revealNewEntries() }
             }
-            .onChange(of: query) { _, _ in showLatest(proxy) }
+            .onChange(of: query) { _, value in
+                if value != interpretedText { clearInterpretation() }
+                showLatest(proxy)
+            }
+            .onChange(of: interpretation) { _, _ in showLatest(proxy) }
             .onChange(of: scope) { _, _ in showLatest(proxy) }
             .onChange(of: filter) { _, _ in showLatest(proxy) }
             .onChange(of: session.selectedProjectId) { _, _ in showLatest(proxy) }
@@ -101,7 +127,15 @@ struct ActivityView: View {
                 .accessibilityIdentifier("takt.history.note")
             }
         }
+        .navigationDestination(item: $openedEntry) { HistoryEntryView(item: $0) }
+        .task(id: session.spotlightEntryID) {
+            // A note opened from Spotlight.
+            guard let id = session.spotlightEntryID else { return }
+            session.spotlightEntryID = nil
+            if let item = session.recentActivity.first(where: { $0.id == id }) { openedEntry = item }
+        }
         .searchable(text: $query, prompt: "Search field log")
+        .onSubmit(of: .search) { interpret() }
         .accessibilityIdentifier(AccessibilityIDs.tabActivity)
         .confirmationDialog("Clear this account's activity for the current team?", isPresented: $confirmClear, titleVisibility: .visible) {
             Button("Clear activity", role: .destructive) {
@@ -146,8 +180,80 @@ struct ActivityView: View {
                 HStack(spacing: Spacing.md) { scopePicker; filterPicker; Spacer(minLength: 0) }
                 VStack(alignment: .leading, spacing: 0) { scopePicker; filterPicker }
             }
+            if !session.recentActivity.isEmpty {
+                Button {
+                    session.summarizeFieldLog(allSites: scope == .all || session.selectedProjectId == nil)
+                } label: {
+                    // At accessibility sizes the icon column squeezed the title, so the title stands alone.
+                    HStack(spacing: Spacing.sm) {
+                        if !typeSize.isAccessibilitySize { Image(systemName: "calendar.badge.clock").accessibilityHidden(true) }
+                        Text("Summarize the last 7 days").fixedSize(horizontal: false, vertical: true)
+                    }
+                    .font(.subheadline).frame(minHeight: 44, alignment: .leading)
+                }
+                .buttonStyle(.borderless)
+                .disabled(session.fieldLogDigest?.isSummarizing == true)
+                .accessibilityIdentifier("takt.history.summarize")
+            }
+            searchReading
         }
         .padding(.vertical, Spacing.sm)
+    }
+
+    @ViewBuilder private var searchReading: some View {
+        if interpreting {
+            ProgressView("Reading your search…").font(.footnote)
+        } else if let interpretation {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                let filters = interpretation.query.filters
+                if !filters.isEmpty {
+                    ChipFlowLayout {
+                        ForEach(filters) { applied in
+                            RemovableChip(label: applied.label) { remove(applied.kind) }
+                        }
+                    }
+                    .accessibilityIdentifier("takt.history.search.filters")
+                }
+                if interpretation.interpreter == .appleIntelligence {
+                    Label("Interpreted with Apple Intelligence on this device", systemImage: "sparkle")
+                        .font(.footnote).foregroundStyle(Palette.textSecondary)
+                }
+            }
+        }
+    }
+
+    private func interpret() {
+        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        interpretTask?.cancel()
+        guard !text.isEmpty else { clearInterpretation(); return }
+        interpretedText = query
+        interpreting = true
+        interpretTask = Task {
+            let reading = await session.interpretFieldLogSearch(text, allowModel: useAppleIntelligence)
+            guard !Task.isCancelled, query == interpretedText else { return }
+            interpretation = reading
+            interpreting = false
+        }
+    }
+
+    private func remove(_ kind: FieldLogQueryFilter.Kind) {
+        guard var reading = interpretation else { return }
+        reading.query = reading.query.removing(kind)
+        if reading.query.hasFilters {
+            interpretation = reading
+        } else {
+            // Nothing left to filter by: start over with an empty field.
+            query = ""
+            clearInterpretation()
+        }
+    }
+
+    private func clearInterpretation() {
+        interpretTask?.cancel()
+        interpretTask = nil
+        interpretation = nil
+        interpretedText = ""
+        interpreting = false
     }
 
     private var scopePicker: some View {
@@ -181,7 +287,7 @@ struct ActivityView: View {
             Text(hasFilters ? "Try another search or reset your filters." : "Checks, comparisons, actions, and notes will appear here.")
         } actions: {
             if hasFilters {
-                Button("Reset filters") { query = ""; filter = .all }
+                Button("Reset filters") { query = ""; filter = .all; clearInterpretation() }
                     .accessibilityIdentifier("takt.history.reset")
             }
         }
@@ -196,6 +302,75 @@ struct ActivityView: View {
         if Calendar.current.isDateInToday(date) { return "Today" }
         if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
         return date.formatted(date: .abbreviated, time: .omitted)
+    }
+}
+
+/// Deterministic counts on every device, an optional on-device summary, and
+/// the exact entries it read, each opening its saved record.
+private struct FieldLogDigestCard: View {
+    var digest: FieldLogDigest
+    var available: Set<String>
+    var showSite: Bool
+    var open: (ActivityItem) -> Void
+    var dismiss: () -> Void
+    @State private var showsEntries = false
+
+    var body: some View {
+        let entries = digest.entries.filter { available.contains($0.id) }
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(alignment: .firstTextBaseline) {
+                // The counts line already says "Last 7 days"; the heading names the scope.
+                Text(digest.scopeLabel).font(.headline).foregroundStyle(Palette.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: Spacing.sm)
+                Button(action: dismiss) {
+                    Image(systemName: "xmark").frame(minWidth: 44, minHeight: 44)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Dismiss summary")
+                .accessibilityIdentifier("takt.history.summary.dismiss")
+            }
+            Text(digest.facts).font(.subheadline).foregroundStyle(Palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("takt.history.summary.facts")
+            if digest.isSummarizing {
+                ProgressView("Summarizing on device…").font(.footnote)
+            } else if let summary = digest.summary {
+                Label("Apple Intelligence", systemImage: "apple.intelligence")
+                    .font(.caption).foregroundStyle(Palette.textSecondary)
+                Text(summary).font(.body).foregroundStyle(Palette.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("takt.history.summary.text")
+            }
+            if !entries.isEmpty {
+                DisclosureGroup(isExpanded: $showsEntries) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(entries) { item in
+                            Button { open(item) } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.displayTitle).font(.subheadline).foregroundStyle(Palette.text)
+                                    Text([item.createdAt.formatted(.dateTime.weekday(.abbreviated).hour().minute()),
+                                          showSite ? item.projectName : nil].compactMap { $0 }.joined(separator: " · "))
+                                        .font(.caption).foregroundStyle(Palette.textSecondary)
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                } label: {
+                    Text(digest.summary == nil ? "Entries counted (\(entries.count))" : "Based on \(entries.count) \(entries.count == 1 ? "entry" : "entries")")
+                        .font(.subheadline).foregroundStyle(Palette.text)
+                }
+                .accessibilityIdentifier("takt.history.summary.entries")
+            }
+        }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radii.plate, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radii.plate, style: .continuous).strokeBorder(Palette.border, lineWidth: 0.5))
+        .padding(.bottom, Spacing.sm)
     }
 }
 
