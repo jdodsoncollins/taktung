@@ -51,3 +51,19 @@ Monitor without changing anything:
 asc builds info --build-id fa0f01b8-7b28-4f97-a504-896fb4a959b3
 asc builds build-beta-detail view --build-id fa0f01b8-7b28-4f97-a504-896fb4a959b3
 ```
+
+## App Store preparation — November 7
+
+The user approved merging to main and asked for an App Store release "for public immediate release". PR #4 merged the release branch into main as `2edd69c`. Submitting for review needs a separate in-thread approval.
+
+- **Version:** `68832bd8-09ea-4c58-9116-b78e93873368`, **1.9.1**, **PREPARE_FOR_SUBMISSION**, build 49 (`fa0f01b8-7b28-4f97-a504-896fb4a959b3`) attached.
+- **Release policy:** **AFTER_APPROVAL**, no phased release.
+- **Metadata:** staged with `asc release stage` from `metadata/version/1.9.1/en-US.json`. The description, keywords, promotional text and URLs match live 1.9.0; only What's New is new. App information, pricing, screenshots, previews, age rating and review details carry over unchanged.
+- **Validation:** strict validation reported 0 errors and 0 warnings, plus the standard App Privacy publish-state advisory. The submit dry run found no existing submission for the version.
+- **What's New (en-US):**
+
+  > Fixes:
+  >
+  > - Visual comparison now shows the previous and current page every time. A capture could end with no images, especially on iPhone Duo and iPad.
+  > - Captures are faster. Both pages load at once and are taken as soon as the visible page is ready. If a page can’t be captured, Taktung says which one and why.
+  > - On iPad held upright, Home and deployment details use one full-height column, so nothing is cut off.
