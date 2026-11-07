@@ -126,7 +126,7 @@ The **Taktung Demo** scheme sets this for you. Demo website previews render bund
 
 ### Adaptive workspaces and store imagery
 
-Home and deployment detail share `AdaptiveWorkspace`: one scrolling column at compact width, two independently scrolling panes at regular width, and iOS 27.1 `ArrangementView` split layout around active division regions. Navigation and selection remain outside the layout branches.
+Home and deployment detail share `AdaptiveWorkspace`: one scrolling column at compact width and in taller-than-wide regular spaces (an upright iPad or unfolded Duo), two independently scrolling side-by-side panes in wider-than-tall regular spaces, and iOS 27.1 `ArrangementView` split layout for those and around active division regions. Navigation and selection remain outside the layout branches.
 
 See [Duo readiness](docs/iphone-duo-readiness.md) for the runtime test matrix and [App Store imagery](docs/app-store-imagery.md) for the current editable studio, source captures and reviewed 31-image package. The [1.5.0 submission record](docs/release-1.5.0-42.md) preserves the earlier listing and review evidence. [1.6.0 (43)](docs/release-1.6.0-43.md) is live; [1.7.0 (44)](docs/release-1.7.0-44.md) adds Analytics.
 
