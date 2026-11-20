@@ -10,11 +10,15 @@ struct EvidenceScope: Codable, Hashable, Sendable {
 
 enum VisualComparisonError: LocalizedError {
     case invalidRoute, unavailable, protectedPage, detached, staleScope, invalidImage, corruptStore
+    case timedOut, httpStatus(Int), network(String)
 
     var errorDescription: String? {
         switch self {
         case .invalidRoute: "Enter a path such as / or /about, without a host, query, or fragment."
         case .unavailable: "The page could not be captured. Check its availability and try again."
+        case .timedOut: "The page did not become ready within \(Int(visualCaptureTimeout.components.seconds)) seconds. Try again."
+        case .httpStatus(let code): "The page returned HTTP \(code)."
+        case .network(let reason): "The page could not be loaded. \(reason)"
         case .protectedPage: "This page requires authentication or redirected elsewhere. Review it in your browser."
         case .detached: "Open the app to capture a page."
         case .staleScope: "The selected account or site changed. Open Compare again."
@@ -22,6 +26,30 @@ enum VisualComparisonError: LocalizedError {
         case .corruptStore: "Local evidence could not be read. Existing files have been kept."
         }
     }
+}
+
+/// Whole-capture budget for one page. Readiness waits inside it are bounded separately, so a slow
+/// below-the-fold image, analytics request or third-party frame cannot hold the capture open.
+let visualCaptureTimeout: Duration = .seconds(30)
+
+/// Vercel injects its toolbar frame into preview deployments only. It is not part of the site under
+/// review, and loading it would make preview-versus-production captures differ for reasons outside the change.
+func isVercelToolbarFrame(_ url: URL?) -> Bool {
+    guard let host = url?.host?.lowercased() else { return false }
+    return host == "vercel.live" || host.hasSuffix(".vercel.live")
+}
+
+/// Main-frame failures map to the reason a person can act on.
+func visualCaptureError(statusCode: Int) -> VisualComparisonError {
+    statusCode == 401 || statusCode == 403 ? .protectedPage : .httpStatus(statusCode)
+}
+
+/// `nil` when a newer main-frame navigation (such as a client-side redirect) replaced this one;
+/// the capture keeps waiting for that document within its timeout.
+func visualCaptureError(loadFailure error: any Error) -> VisualComparisonError? {
+    let ns = error as NSError
+    guard ns.domain == NSURLErrorDomain else { return .unavailable }
+    return ns.code == NSURLErrorCancelled ? nil : .network(ns.localizedDescription)
 }
 
 /// Only a route within the selected deployment, never a free-form URL or credential-bearing query.

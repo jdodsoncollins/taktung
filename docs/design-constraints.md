@@ -10,7 +10,7 @@ Home shows the selected site's production state, page evidence and commit first,
 
 - iOS 27 minimum, Xcode 27.1 SDK. Native tabs, navigation stacks, menus, sheets and confirmation dialogs own interaction.
 - Liquid Glass belongs to navigation chrome. Content is opaque semantic surfaces.
-- Home and detail use AdaptiveWorkspace: one column at compact width, two panes at regular width, and ArrangementView for active Duo division regions on 27.1. Navigation and evidence state sit outside layout branches.
+- Home and detail use AdaptiveWorkspace: one readable column at compact width and in taller-than-wide regular spaces, two side-by-side panes in wider-than-tall regular spaces, and ArrangementView for those and for active Duo division regions on 27.1. Navigation and evidence state sit outside layout branches.
 - Only backgrounds ignore safe areas. Long site titles truncate in the middle without overlapping toolbar buttons; accessibility retains their full label.
 - Settings stores System/Light/Dark selection. A System choice follows the root's effective system scheme, including during an open sheet.
 

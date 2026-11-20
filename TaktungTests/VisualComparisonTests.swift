@@ -31,4 +31,27 @@ struct VisualComparisonTests {
         #expect(!references.contains { $0.id == candidate.id || $0.state != .ready })
         #expect(Set(references.map(\.id)).count == references.count)
     }
+
+    @Test func skipsOnlyVercelsPreviewToolbarFrames() {
+        #expect(isVercelToolbarFrame(URL(string: "https://vercel.live/_next-live/feedback/feedback.html?dpl=dpl_1")))
+        #expect(isVercelToolbarFrame(URL(string: "https://assets.vercel.live/frame")))
+        #expect(!isVercelToolbarFrame(URL(string: "https://candidate.vercel.app/embed")))
+        #expect(!isVercelToolbarFrame(URL(string: "https://notvercel.live/")))
+        #expect(!isVercelToolbarFrame(nil))
+    }
+
+    @Test func captureFailuresNameTheReasonAndThePage() {
+        #expect(visualCaptureError(statusCode: 401).localizedDescription == VisualComparisonError.protectedPage.localizedDescription)
+        #expect(visualCaptureError(statusCode: 403).localizedDescription == VisualComparisonError.protectedPage.localizedDescription)
+        #expect(visualCaptureError(statusCode: 500).localizedDescription == "The page returned HTTP 500.")
+        let offline = visualCaptureError(loadFailure: URLError(.notConnectedToInternet))
+        #expect(offline?.localizedDescription.hasPrefix("The page could not be loaded.") == true)
+        #expect(visualCaptureError(loadFailure: NSError(domain: "WebKitErrorDomain", code: 102))?.localizedDescription
+                == VisualComparisonError.unavailable.localizedDescription)
+        // A client-side redirect cancels the first load; the capture waits for the replacement document.
+        #expect(visualCaptureError(loadFailure: URLError(.cancelled)) == nil)
+        #expect(VisualComparisonError.timedOut.localizedDescription.contains("30 seconds"))
+        let failure = PageCaptureFailure(role: "Reference", commit: "1b1520d", underlying: VisualComparisonError.timedOut)
+        #expect(failure.localizedDescription.hasPrefix("Reference (1b1520d): "))
+    }
 }

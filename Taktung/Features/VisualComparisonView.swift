@@ -2,6 +2,8 @@ import SwiftUI
 import Observation
 
 /// Owned above AdaptiveWorkspace, so folding changes layout without discarding review evidence.
+/// The capture task lives here too: a re-layout that re-creates the comparison view (folding, or the
+/// split arrangement re-hosting its panes) must not cancel a capture in progress.
 @Observable
 final class VisualComparisonState {
     fileprivate var routeText = "/"
@@ -17,6 +19,9 @@ final class VisualComparisonState {
     fileprivate var confirmBaseline = false
     fileprivate var expanded: ComparisonPair?
     fileprivate var loadedContext: String?
+    @ObservationIgnored fileprivate var captureTask: Task<Void, Never>?
+
+    deinit { captureTask?.cancel() }
 }
 
 fileprivate struct VisualComparisonRequest: Identifiable {
@@ -92,10 +97,6 @@ struct VisualComparisonView: View {
         .onChange(of: referenceID) { _, _ in
             if !busy { baseline = nil; candidate = nil }
         }
-        .task(id: request?.id) {
-            if let request { await capture(request) }
-        }
-        .onDisappear { request = nil; busy = false }
         .confirmationDialog("Save this candidate as the baseline?", isPresented: $comparison.confirmBaseline, titleVisibility: .visible) {
             Button("Save baseline") { Task { await saveBaseline() } }
         } message: {
@@ -168,6 +169,8 @@ struct VisualComparisonView: View {
     private func loadSavedBaseline() async {
         let expected = context + "|" + routeText
         guard comparison.loadedContext != expected else { return }
+        comparison.captureTask?.cancel()
+        comparison.captureTask = nil
         request = nil
         busy = false
         baseline = nil
@@ -191,7 +194,11 @@ struct VisualComparisonView: View {
     }
 
     private func beginCapture() async {
-        guard !busy, candidateBelongsToSite, let scope = session.evidenceScope, let projectID = session.selectedProjectId else { return }
+        guard !busy, candidateBelongsToSite else { return }
+        guard let scope = session.evidenceScope, let projectID = session.selectedProjectId else {
+            message = "Connect to Vercel and choose a site before capturing pages."
+            return
+        }
         let expected = context
         let expectedRoute = routeText
         request = nil
@@ -204,8 +211,11 @@ struct VisualComparisonView: View {
             saved = stored
             var ref = references.first { $0.id == referenceID }
             if referenceID == "saved", stored == nil { ref = references.first }
-            request = VisualComparisonRequest(context: expected, scope: scope, projectID: projectID, route: route,
-                                     reference: ref, saved: referenceID == "saved" ? stored : nil)
+            let next = VisualComparisonRequest(context: expected, scope: scope, projectID: projectID, route: route,
+                                               reference: ref, saved: referenceID == "saved" ? stored : nil)
+            request = next
+            comparison.captureTask?.cancel()
+            comparison.captureTask = Task { await capture(next) }
         } catch { if context == expected, routeText == expectedRoute { message = error.localizedDescription } }
     }
 
@@ -216,13 +226,13 @@ struct VisualComparisonView: View {
         baseline = nil
         defer { if request?.id == input.id { busy = false } }
         do {
-            let current = try await VisualCaptureHostRegistry.shared.capture(deployment: deployment, projectID: input.projectID, route: input.route)
-            try Task.checkCancellation()
-            let reference: VisualCapture?
-            if let saved = input.saved { reference = saved }
-            else if let ref = input.reference {
-                reference = try await VisualCaptureHostRegistry.shared.capture(deployment: ref, projectID: input.projectID, route: input.route)
-            } else { reference = nil }
+            // Both pages load at once, so a comparison takes as long as the slower page rather than both.
+            let candidateDeployment = deployment
+            async let candidatePage = labeledCapture(candidateDeployment, role: "This deployment", input: input)
+            async let referencePage = optionalCapture(input.saved == nil ? input.reference : nil, input: input)
+            let current = try await candidatePage
+            let fetchedReference = try await referencePage
+            let reference = fetchedReference ?? input.saved
             guard context == input.context, (try? comparisonRoute(routeText)) == input.route,
                   request?.id == input.id, !Task.isCancelled else { return }
             candidate = current
@@ -236,11 +246,29 @@ struct VisualComparisonView: View {
                 baseline = current
                 message = "No earlier READY deployment is available. Save this capture as the first baseline."
             }
-        } catch is CancellationError { return }
-        catch {
+        } catch is CancellationError {
+            // A newer capture or a site change cancels quietly; anything else says so instead of going blank.
+            guard context == input.context, request?.id == input.id else { return }
+            message = "The capture was interrupted. Capture again."
+        } catch {
             guard context == input.context, request?.id == input.id else { return }
             message = error.localizedDescription
         }
+    }
+
+    private func labeledCapture(_ page: VercelDeploymentSummary, role: String, input: VisualComparisonRequest) async throws -> VisualCapture {
+        do {
+            return try await VisualCaptureHostRegistry.shared.capture(deployment: page, projectID: input.projectID, route: input.route)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw PageCaptureFailure(role: role, commit: shortSha(page), underlying: error)
+        }
+    }
+
+    private func optionalCapture(_ page: VercelDeploymentSummary?, input: VisualComparisonRequest) async throws -> VisualCapture? {
+        guard let page else { return nil }
+        return try await labeledCapture(page, role: "Reference", input: input)
     }
 
     private func saveBaseline() async {
@@ -261,6 +289,14 @@ struct VisualComparisonView: View {
                 projectID: candidate.projectID, deploymentID: candidate.deploymentID, scope: scope)
         } catch { if context == expected { message = error.localizedDescription } }
     }
+}
+
+/// Names which page failed, so a slow reference is not mistaken for a broken candidate.
+struct PageCaptureFailure: LocalizedError {
+    var role: String
+    var commit: String
+    var underlying: any Error
+    var errorDescription: String? { "\(role) (\(commit)): \(underlying.localizedDescription)" }
 }
 
 enum ComparisonPresentation: String, CaseIterable, Identifiable {

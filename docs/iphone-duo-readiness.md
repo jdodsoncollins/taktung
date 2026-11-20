@@ -8,7 +8,7 @@ Built with Xcode 27.1 (27A9275) against iOS 27.1. The signed Release archive rep
 
 ## Architecture changes
 
-`AdaptiveWorkspace` owns layout, not product state. Compact width uses one ScrollView. Regular width on iOS 27.0 uses two independent scrolling panes. On 27.1, regular width or an active division reserved region uses `ArrangementView` with `.split`; its system layout handles division avoidance. ArrangementView sits inside the navigation stack, outside scrolling content. Only backgrounds ignore safe areas.
+`AdaptiveWorkspace` owns layout, not product state. Two panes appear only when they can sit side by side or straddle a fold: regular width in a space wider than tall, or any active division reserved region. Everything else (compact width, and taller-than-wide regular spaces such as an upright iPad or unfolded Duo) uses one ScrollView with a 760 pt readable column. A split arrangement in a tall space stacks the panes into two half-height scroll areas, which clipped Home's Project tools card and left a gap above the deployment detail tabs. On 27.1 the two-pane case uses `ArrangementView` with `.split` and its system layout handles division avoidance; iOS 27.0 uses two side-by-side scrolling panes. ArrangementView sits inside the navigation stack, outside scrolling content. Only backgrounds ignore safe areas.
 
 Home separates the site face from checks and brief. Deployment detail separates the deployment overview from the selected analysis pane and actions. Site, deployment, navigation, detail pane, loaded logs, and analysis belong above the conditional layout branches. Scroll offsets can reset when the layout switches between compact and split. Native folding checks preserved the selected deployment, Logs pane and loaded content.
 
